@@ -57,6 +57,7 @@ INSTALL_LOGI_OPTIONS=false
 INSTALL_CHATGPT=false
 INSTALL_ADB=false
 INSTALL_SCRCPY=false
+INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
 COPY_GHOSTTY_CONFIG=false
 
@@ -285,6 +286,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ scrcpy already installed"
+    fi
+
+    # Check Shottr
+    if ! ls /Applications/ 2>/dev/null | grep -qi "shottr"; then
+        if prompt_yes_no "📸 Install Shottr (screenshot tool)?"; then
+            INSTALL_SHOTTR=true
+        fi
+    else
+        echo "✅ Shottr already installed"
     fi
 
     # Check Windows App
@@ -662,6 +672,13 @@ if [[ "$INSTALL_SCRCPY" == true ]]; then
     echo "✅ scrcpy installed"
 fi
 
+# Shottr
+if [[ "$INSTALL_SHOTTR" == true ]]; then
+    echo "📸 Installing Shottr..."
+    brew install --cask shottr
+    echo "✅ Shottr installed"
+fi
+
 # Windows App
 if [[ "$INSTALL_WINDOWS_APP" == true ]]; then
     echo "🪟 Installing Windows App..."
@@ -711,6 +728,7 @@ ls /Applications/ 2>/dev/null | grep -qi "logi options" && echo "✅ Logi Option
 ls /Applications/ 2>/dev/null | grep -qi "chatgpt" && echo "✅ ChatGPT: Installed"
 command -v adb >/dev/null && echo "✅ Android Platform Tools (ADB): $(adb --version | head -n1)"
 command -v scrcpy >/dev/null && echo "✅ scrcpy: $(scrcpy --version 2>&1 | head -n1)"
+ls /Applications/ 2>/dev/null | grep -qi "shottr" && echo "✅ Shottr: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "windows app" && echo "✅ Windows App: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "visual studio code" && echo "✅ VS Code: Installed"
 command -v code >/dev/null && echo "✅ VS Code CLI: Available"

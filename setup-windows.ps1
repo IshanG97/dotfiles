@@ -88,6 +88,7 @@ $INSTALL_GOOGLE_DRIVE = $false
 $INSTALL_QBITTORRENT = $false
 $INSTALL_OBSIDIAN = $false
 $INSTALL_LOGI_OPTIONS = $false
+$INSTALL_CONDA = $false
 $PYTHON_VERSION = ""
 
 # Check Winget
@@ -116,6 +117,15 @@ if (-not (Test-Command "git-filter-repo")) {
     }
 } else {
     Write-Host "[OK] git-filter-repo already installed" -ForegroundColor Green
+}
+
+# Check conda/Anaconda
+if (-not (Test-Command "conda")) {
+    if (Prompt-YesNo "[CONDA] Install Anaconda3 (includes conda, Python, and data science tools)?") {
+        $INSTALL_CONDA = $true
+    }
+} else {
+    Write-Host "[OK] Conda already installed" -ForegroundColor Green
 }
 
 # Check pyenv-win
@@ -287,6 +297,27 @@ if ($INSTALL_UV) {
     Write-Host "[OK] UV installed" -ForegroundColor Green
 }
 
+# Install Anaconda3
+if ($INSTALL_CONDA) {
+    Write-Host "[CONDA] Installing Anaconda3..." -ForegroundColor Yellow
+    winget install -e --id Anaconda.Anaconda3 --source winget
+
+    # Refresh PATH
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
+    # Initialize conda for all shells
+    Write-Host "[CONDA] Initializing conda..." -ForegroundColor Yellow
+    $condaPath = "$env:USERPROFILE\anaconda3\Scripts\conda.exe"
+    if (Test-Path $condaPath) {
+        & $condaPath init
+        Write-Host "[OK] Anaconda3 installed and initialized" -ForegroundColor Green
+        Write-Host "[!] Please restart your terminal to use conda" -ForegroundColor Yellow
+    } else {
+        Write-Host "[!] Anaconda3 installed but conda.exe not found at expected location" -ForegroundColor Yellow
+        Write-Host "[!] You may need to manually run: conda init" -ForegroundColor Yellow
+    }
+}
+
 # Install git-filter-repo via pip
 if ($INSTALL_GITFILTER_REPO) {
     Write-Host "[CLN] Installing git-filter-repo..." -ForegroundColor Yellow
@@ -301,22 +332,16 @@ if ($INSTALL_GITFILTER_REPO) {
 # Install pyenv-win
 if ($INSTALL_PYENV) {
     Write-Host "[PY] Installing pyenv-win..." -ForegroundColor Yellow
-    if (Test-Command "git") {
-        git clone https://github.com/pyenv-win/pyenv-win.git $env:USERPROFILE\.pyenv
-
-        # Add to PATH in user environment
-        $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-        $pyenvPath = "$env:USERPROFILE\.pyenv\pyenv-win\bin;$env:USERPROFILE\.pyenv\pyenv-win\shims"
-        if ($currentPath -notlike "*$pyenvPath*") {
-            [Environment]::SetEnvironmentVariable("PATH", "$pyenvPath;$currentPath", "User")
-        }
+    if (Test-Command "choco") {
+        choco install pyenv-win -y
 
         # Refresh PATH for current session
-        $env:Path = "$pyenvPath;" + $env:Path
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
         Write-Host "[OK] pyenv-win installed" -ForegroundColor Green
     } else {
-        Write-Host "[X] Git is required to install pyenv-win" -ForegroundColor Red
+        Write-Host "[X] Chocolatey is required to install pyenv-win" -ForegroundColor Red
+        Write-Host "[!] Install Chocolatey from https://chocolatey.org/install" -ForegroundColor Yellow
     }
 }
 
@@ -385,6 +410,14 @@ if (Test-Command "git") { Write-Host "[OK] Git: $((git --version).Trim())" -Fore
 if (Test-Command "uv") { Write-Host "[OK] UV: $((uv --version).Trim())" -ForegroundColor Green }
 if (Test-Command "git-filter-repo") { Write-Host "[OK] git-filter-repo: Available" -ForegroundColor Green }
 
+# Check conda
+if (Test-Command "conda") {
+    try {
+        $condaVersion = conda --version 2>$null
+        if ($condaVersion) { Write-Host "[OK] Conda: $condaVersion" -ForegroundColor Green }
+    } catch {}
+}
+
 # Check pyenv/Python
 if (Test-Command "pyenv") {
     Write-Host "[OK] pyenv-win: Available" -ForegroundColor Green
@@ -412,6 +445,7 @@ Write-Host ""
 Write-Host "[OBS] Next steps:" -ForegroundColor Cyan
 Write-Host "1. Restart your terminal to ensure all PATH changes take effect" -ForegroundColor White
 Write-Host "2. Configure git if not already done:" -ForegroundColor White
-Write-Host "3. If you installed NVM, run: nvm install lts && nvm use lts" -ForegroundColor White
-Write-Host "4. Open VS Code and install your preferred extensions" -ForegroundColor White
-Write-Host "5. Configure f.lux for your monitor brightness preferences" -ForegroundColor White
+Write-Host "3. If you installed conda, restart terminal and verify with: conda --version" -ForegroundColor White
+Write-Host "4. If you installed NVM, run: nvm install lts && nvm use lts" -ForegroundColor White
+Write-Host "5. Open VS Code and install your preferred extensions" -ForegroundColor White
+Write-Host "6. Configure f.lux for your monitor brightness preferences" -ForegroundColor White

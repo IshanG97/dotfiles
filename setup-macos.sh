@@ -253,7 +253,7 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
     fi
 
     # Check Logi Options+
-    if ! ls /Applications/ 2>/dev/null | grep -qi "logi options"; then
+    if ! ls /Applications/ 2>/dev/null | grep -qi "logioptionsplus"; then
         if prompt_yes_no "🖱️  Install Logi Options+ (Logitech device manager)?"; then
             INSTALL_LOGI_OPTIONS=true
         fi
@@ -724,7 +724,7 @@ ls /Applications/ 2>/dev/null | grep -qi "transmission" && echo "✅ Transmissio
 ls /Applications/ 2>/dev/null | grep -qi "obsidian" && echo "✅ Obsidian: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "whatsapp" && echo "✅ WhatsApp: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "spotify" && echo "✅ Spotify: Installed"
-ls /Applications/ 2>/dev/null | grep -qi "logi options" && echo "✅ Logi Options+: Installed"
+ls /Applications/ 2>/dev/null | grep -qi "logioptionsplus" && echo "✅ Logi Options+: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "chatgpt" && echo "✅ ChatGPT: Installed"
 command -v adb >/dev/null && echo "✅ Android Platform Tools (ADB): $(adb --version | head -n1)"
 command -v scrcpy >/dev/null && echo "✅ scrcpy: $(scrcpy --version 2>&1 | head -n1)"

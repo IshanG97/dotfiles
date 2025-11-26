@@ -84,7 +84,9 @@ git filter-repo --path-rename old-folder/:new-folder/
 - Add comments only when necessary for complex logic
 - Prefer composition over inheritance
 - Write self-documenting code
-- Never use emojis in code, comments, or documentation unless explicitly requested
+- Never use emojis or decorative symbols (✓, ✗, →, ⚠, etc.) in code, comments, or documentation unless explicitly requested
+- Keep print statements and console output simple and text-only
+- Use plain ASCII characters for all code output and logging
 
 ### Testing Requirements
 - Write tests for new functionality

@@ -45,6 +45,7 @@ INSTALL_PYENV=false
 INSTALL_PYTHON=false
 INSTALL_LUNAR=false
 INSTALL_MACCY=false
+INSTALL_RAYCAST=false
 INSTALL_GHOSTTY=false
 INSTALL_RECTANGLE=false
 INSTALL_AEROSPACE=false
@@ -168,6 +169,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ Maccy already installed"
+    fi
+
+    # Check Raycast
+    if ! ls /Applications/ 2>/dev/null | grep -qi "raycast"; then
+        if prompt_yes_no "🔍 Install Raycast (productivity launcher)?"; then
+            INSTALL_RAYCAST=true
+        fi
+    else
+        echo "✅ Raycast already installed"
     fi
 
     # Check Ghostty
@@ -572,6 +582,13 @@ if [[ "$INSTALL_MACCY" == true ]]; then
     echo "✅ Maccy installed"
 fi
 
+# Raycast
+if [[ "$INSTALL_RAYCAST" == true ]]; then
+    echo "🔍 Installing Raycast..."
+    brew install --cask raycast
+    echo "✅ Raycast installed"
+fi
+
 # Visual Studio Code
 if [[ "$INSTALL_VSCODE" == true ]]; then
     echo "💻 Installing Visual Studio Code..."
@@ -750,6 +767,7 @@ command -v npm >/dev/null && echo "✅ npm: $(npm --version)"
 ls /Applications/ 2>/dev/null | grep -qi "brave" && echo "✅ Brave Browser: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "lunar" && echo "✅ Lunar: Installed"
 command -v maccy >/dev/null && echo "✅ Maccy: Installed"
+ls /Applications/ 2>/dev/null | grep -qi "raycast" && echo "✅ Raycast: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "ghostty" && echo "✅ Ghostty: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "rectangle" && echo "✅ Rectangle: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "aerospace" && echo "✅ AeroSpace: Installed"

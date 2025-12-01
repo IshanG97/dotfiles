@@ -29,6 +29,7 @@ echo "📋 Let's configure what to install..."
 echo ""
 
 # Ask about each component upfront
+CONFIGURE_SUDO=false
 INSTALL_BUILD_ESSENTIAL=false
 INSTALL_CURL=false
 INSTALL_GIT=false
@@ -61,6 +62,16 @@ INSTALL_RCLONE=false
 INSTALL_PLEX=false
 INSTALL_COPYQ=false
 INSTALL_REMMINA=false
+
+# Check if current user needs sudo configuration
+CURRENT_USER=$(whoami)
+if ! sudo -l &>/dev/null 2>&1 || ! sudo -n true 2>/dev/null; then
+    if prompt_yes_no "🔐 Configure sudo access for user '$CURRENT_USER'?"; then
+        CONFIGURE_SUDO=true
+    fi
+else
+    echo "✅ User '$CURRENT_USER' already has sudo access"
+fi
 
 # Check build-essential
 if ! dpkg -l | grep -q "^ii  build-essential"; then
@@ -391,6 +402,30 @@ echo ""
 echo "🚦 Starting installation based on your choices..."
 echo ""
 
+# Configure sudo access for current user
+if [[ "$CONFIGURE_SUDO" == true ]]; then
+    echo "🔐 Configuring sudo access for user '$CURRENT_USER'..."
+
+    # Add user to sudo group
+    sudo usermod -aG sudo "$CURRENT_USER"
+
+    # Create sudoers file for the user
+    echo "$CURRENT_USER ALL=(ALL:ALL) ALL" | sudo tee /etc/sudoers.d/"$CURRENT_USER" > /dev/null
+
+    # Set proper permissions
+    sudo chmod 0440 /etc/sudoers.d/"$CURRENT_USER"
+
+    # Verify sudoers configuration
+    if sudo visudo -c &>/dev/null; then
+        echo "✅ Sudo access configured for user '$CURRENT_USER'"
+        echo "ℹ️  Note: You may need to log out and log back in for group membership to take full effect"
+    else
+        echo "❌ Error: sudoers configuration failed"
+        sudo rm -f /etc/sudoers.d/"$CURRENT_USER"
+        exit 1
+    fi
+fi
+
 # Update package list
 echo "📦 Updating package list..."
 sudo apt update
@@ -558,9 +593,17 @@ fi
 # Google Chrome
 if [[ "$INSTALL_GOOGLE_CHROME" == true ]]; then
     echo "🌐 Installing Google Chrome..."
-    wget -q -O /tmp/google-chrome-stable_current_amd64.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-    sudo apt install -y /tmp/google-chrome-stable_current_amd64.deb
-    rm /tmp/google-chrome-stable_current_amd64.deb
+    sudo wget -q -O /etc/apt/keyrings/linux_signing_key.pub https://dl-ssl.google.com/linux/linux_signing_key.pub
+    sudo tee /etc/apt/sources.list.d/google-chrome.sources > /dev/null <<'EOF'
+Types: deb
+URIs: http://dl.google.com/linux/chrome/deb/
+Suites: stable
+Components: main
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/linux_signing_key.pub
+EOF
+    sudo apt update
+    sudo apt install -y google-chrome-stable
     echo "✅ Google Chrome installed"
 fi
 

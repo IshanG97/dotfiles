@@ -63,6 +63,8 @@ INSTALL_SCRCPY=false
 INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
 COPY_GHOSTTY_CONFIG=false
+DISABLE_SPOTLIGHT=false
+MOVE_DOCK_LEFT=false
 
 # Check Xcode
 if ! xcode-select -p &>/dev/null; then
@@ -175,9 +177,17 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
     if ! ls /Applications/ 2>/dev/null | grep -qi "raycast"; then
         if prompt_yes_no "🔍 Install Raycast (productivity launcher)?"; then
             INSTALL_RAYCAST=true
+            # Ask about disabling Spotlight if installing Raycast
+            if prompt_yes_no "   Disable Spotlight keyboard shortcut (Cmd+Space)?"; then
+                DISABLE_SPOTLIGHT=true
+            fi
         fi
     else
         echo "✅ Raycast already installed"
+        # Ask about Spotlight even if Raycast is already installed
+        if prompt_yes_no "🔍 Disable Spotlight keyboard shortcut (Cmd+Space)?"; then
+            DISABLE_SPOTLIGHT=true
+        fi
     fi
 
     # Check Ghostty
@@ -404,6 +414,20 @@ else
     fi
 fi
 
+# macOS Appearance Settings
+echo ""
+echo "⚙️  macOS Appearance Settings"
+echo ""
+
+# Ask about dock position
+CURRENT_DOCK_POSITION=$(defaults read com.apple.dock orientation 2>/dev/null || echo "bottom")
+if [[ "$CURRENT_DOCK_POSITION" != "left" ]]; then
+    if prompt_yes_no "🪟 Move Dock to left side of screen?"; then
+        MOVE_DOCK_LEFT=true
+    fi
+else
+    echo "✅ Dock already positioned on left"
+fi
 
 echo ""
 echo "🚦 Starting installation based on your choices..."
@@ -737,6 +761,28 @@ if [[ "$INSTALL_WINDOWS_APP" == true ]]; then
     echo "✅ Windows App installed"
 fi
 
+# Configure macOS settings
+if [[ "$DISABLE_SPOTLIGHT" == true ]] || [[ "$MOVE_DOCK_LEFT" == true ]]; then
+    echo ""
+    echo "⚙️  Configuring macOS settings..."
+fi
+
+# Disable Spotlight keyboard shortcut
+if [[ "$DISABLE_SPOTLIGHT" == true ]]; then
+    echo "🔍 Disabling Spotlight keyboard shortcut..."
+    # Disable Spotlight Show Finder search window (Cmd+Space)
+    defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 "{ enabled = 0; value = { parameters = (65535, 49, 1048576); type = 'standard'; }; }"
+    echo "✅ Spotlight keyboard shortcut disabled (may require logout to take effect)"
+fi
+
+# Move Dock to left
+if [[ "$MOVE_DOCK_LEFT" == true ]]; then
+    echo "🪟 Moving Dock to left side..."
+    defaults write com.apple.dock orientation left
+    killall Dock
+    echo "✅ Dock moved to left side"
+fi
+
 # Verify installations
 echo ""
 echo "🔍 Current installation status:"
@@ -792,7 +838,16 @@ echo "🎉 macOS setup complete!"
 echo ""
 echo "📝 Next steps:"
 echo "1. Restart your terminal or run 'source ~/.zshrc' to reload your shell"
-echo "2. Configure git if not already done:"
+if [[ "$DISABLE_SPOTLIGHT" == true ]]; then
+    echo "2. Log out and log back in for Spotlight changes to fully apply"
+    echo "3. Configure git if not already done:"
+else
+    echo "2. Configure git if not already done:"
+fi
 echo "   git config --global user.name 'Your Name'"
 echo "   git config --global user.email 'your.email@example.com'"
-echo "3. Open VS Code and install your preferred extensions"
+if [[ "$DISABLE_SPOTLIGHT" == true ]]; then
+    echo "4. Open VS Code and install your preferred extensions"
+else
+    echo "3. Open VS Code and install your preferred extensions"
+fi

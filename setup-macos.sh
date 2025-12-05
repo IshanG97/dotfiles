@@ -63,6 +63,7 @@ INSTALL_SCRCPY=false
 INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
 COPY_GHOSTTY_CONFIG=false
+COPY_AEROSPACE_CONFIG=false
 DISABLE_SPOTLIGHT=false
 MOVE_DOCK_LEFT=false
 
@@ -224,9 +225,21 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
     if ! ls /Applications/ 2>/dev/null | grep -qi "aerospace"; then
         if prompt_yes_no "✈️  Install AeroSpace (tiling window manager)?"; then
             INSTALL_AEROSPACE=true
+            # Ask about config if installing AeroSpace
+            if [ -f ".config/aerospace/aerospace.toml" ]; then
+                if prompt_yes_no "   Copy AeroSpace config from dotfiles to ~/.config/aerospace?"; then
+                    COPY_AEROSPACE_CONFIG=true
+                fi
+            fi
         fi
     else
         echo "✅ AeroSpace already installed"
+        # Ask about config if AeroSpace exists
+        if [ -f ".config/aerospace/aerospace.toml" ]; then
+            if prompt_yes_no "✈️  Copy AeroSpace config from dotfiles to ~/.config/aerospace?"; then
+                COPY_AEROSPACE_CONFIG=true
+            fi
+        fi
     fi
 
     # Check Google Chrome
@@ -668,6 +681,24 @@ if [[ "$INSTALL_AEROSPACE" == true ]]; then
     echo "✈️  Installing AeroSpace..."
     brew install --cask nikitabobko/tap/aerospace
     echo "✅ AeroSpace installed"
+fi
+
+# Copy AeroSpace config
+if [[ "$COPY_AEROSPACE_CONFIG" == true ]]; then
+    echo "✈️  Copying AeroSpace config..."
+    # Get the directory where this script is located (dotfiles repo)
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+    # Create ~/.config/aerospace directory if it doesn't exist
+    mkdir -p ~/.config/aerospace
+
+    # Copy the config file
+    if [ -f "$SCRIPT_DIR/.config/aerospace/aerospace.toml" ]; then
+        cp "$SCRIPT_DIR/.config/aerospace/aerospace.toml" ~/.config/aerospace/aerospace.toml
+        echo "✅ AeroSpace config copied to ~/.config/aerospace/aerospace.toml"
+    else
+        echo "⚠️  AeroSpace config file not found in dotfiles"
+    fi
 fi
 
 # Google Chrome

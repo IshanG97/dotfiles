@@ -173,6 +173,6 @@ Z = ['main']
 X = ['main']
 C = ['main']
 
-[[on-window-detected]]
-if.app-id = 'com.mitchellh.ghostty'
-run = "move-node-to-workspace A"
+#[[on-window-detected]]
+#if.app-id = 'com.mitchellh.ghostty'
+#run = "move-node-to-workspace A"

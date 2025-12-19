@@ -28,7 +28,6 @@ default-root-container-orientation = 'auto'
 # See https://nikitabobko.github.io/AeroSpace/commands#move-mouse
 # Fallback value (if you omit the key): on-focused-monitor-changed = []
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
-on-focus-changed = "move-mouse window-lazy-center"
 
 # You can effectively turn off macOS "Hide application" (cmd-h) feature by toggling this flag
 # Useful if you don't use this macOS feature, but accidentally hit cmd-h or cmd-alt-h key
@@ -156,8 +155,6 @@ automatically-unhide-macos-hidden-apps = true
     alt-shift-x = 'move-node-to-workspace X'
     alt-shift-c = 'move-node-to-workspace C'
 
-    alt-shift-f = 'fullscreen'
-
     # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
     alt-tab = 'workspace-back-and-forth'
     # See: https://nikitabobko.github.io/AeroSpace/commands#move-workspace-to-monitor
@@ -232,16 +229,12 @@ automatically-unhide-macos-hidden-apps = true
     #shift-down = ['volume set 0', 'mode main']
 
 [workspace-to-monitor-force-assignment]
-W = ['main', 'secondary']
-E = ['main', 'secondary']
-R = ['main', 'secondary']
-A = ['main', 'secondary']
-S = ['main', 'secondary']
-D = ['main', 'secondary']
-Z = ['main']
-X = ['main']
-C = ['main']
-
-#[[on-window-detected]]
-#if.app-id = 'com.mitchellh.ghostty'
-#run = "move-node-to-workspace A"
+W = ['secondary','main']
+E = ['secondary','main']
+R = ['secondary','main']
+A = ['secondary','main']
+S = ['secondary','main']
+D = ['secondary','main']
+Z = 'main'
+X = 'main'
+C = 'main'

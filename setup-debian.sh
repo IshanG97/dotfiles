@@ -37,6 +37,7 @@ INSTALL_UV=false
 INSTALL_GIT_FILTER_REPO=false
 INSTALL_GIT_LFS=false
 INSTALL_TMUX=false
+INSTALL_OPENSSH_SERVER=false
 INSTALL_BRAVE=false
 INSTALL_VSCODE=false
 INSTALL_NVM=false
@@ -56,12 +57,11 @@ INSTALL_ROFI=false
 INSTALL_PICOM=false
 INSTALL_FLATPAK=false
 INSTALL_WHATSAPP=false
-INSTALL_SIGNAL=false
-INSTALL_DISCORD=false
 INSTALL_RCLONE=false
 INSTALL_PLEX=false
 INSTALL_COPYQ=false
 INSTALL_REMMINA=false
+INSTALL_WINE=false
 
 # Check if current user needs sudo configuration
 CURRENT_USER=$(whoami)
@@ -125,6 +125,15 @@ if ! command -v tmux &>/dev/null; then
     fi
 else
     echo "✅ tmux already installed"
+fi
+
+# Check openssh-server
+if ! systemctl is-enabled ssh &>/dev/null && ! systemctl is-enabled sshd &>/dev/null; then
+    if prompt_yes_no "🔐 Install OpenSSH Server (for remote SSH access)?"; then
+        INSTALL_OPENSSH_SERVER=true
+    fi
+else
+    echo "✅ OpenSSH Server already installed"
 fi
 
 # Check uv
@@ -343,24 +352,6 @@ if command -v dpkg &>/dev/null; then
         echo "✅ WhatsApp already installed"
     fi
 
-    # Check Signal
-    if ! command -v signal-desktop &>/dev/null; then
-        if prompt_yes_no "💬 Install Signal (secure messaging)?"; then
-            INSTALL_SIGNAL=true
-        fi
-    else
-        echo "✅ Signal already installed"
-    fi
-
-    # Check Discord
-    if ! command -v discord &>/dev/null && ! flatpak list 2>/dev/null | grep -q discord; then
-        if prompt_yes_no "💬 Install Discord?"; then
-            INSTALL_DISCORD=true
-        fi
-    else
-        echo "✅ Discord already installed"
-    fi
-
     # Check rclone (Google Drive alternative)
     if ! command -v rclone &>/dev/null; then
         if prompt_yes_no "☁️  Install rclone (cloud storage sync tool - supports Google Drive)?"; then
@@ -396,6 +387,15 @@ if command -v dpkg &>/dev/null; then
     else
         echo "✅ Remmina already installed"
     fi
+
+    # Check Wine
+    if ! command -v wine &>/dev/null; then
+        if prompt_yes_no "🍷 Install Wine (Windows compatibility layer)?"; then
+            INSTALL_WINE=true
+        fi
+    else
+        echo "✅ Wine already installed"
+    fi
 fi
 
 echo ""
@@ -411,6 +411,10 @@ if [[ "$CONFIGURE_SUDO" == true ]]; then
 
     # Create sudoers file for the user
     echo "$CURRENT_USER ALL=(ALL:ALL) ALL" | sudo tee /etc/sudoers.d/"$CURRENT_USER" > /dev/null
+
+    # Set sudo timestamp timeout
+    echo "Defaults        timestamp_timeout=30" | sudo tee /etc/sudoers.d/timestamp_timeout > /dev/null
+    sudo chmod 0440 /etc/sudoers.d/timestamp_timeout
 
     # Set proper permissions
     sudo chmod 0440 /etc/sudoers.d/"$CURRENT_USER"
@@ -471,6 +475,15 @@ if [[ "$INSTALL_TMUX" == true ]]; then
     echo "💻 Installing tmux..."
     sudo apt install -y tmux
     echo "✅ tmux installed"
+fi
+
+# Install OpenSSH Server
+if [[ "$INSTALL_OPENSSH_SERVER" == true ]]; then
+    echo "🔐 Installing OpenSSH Server..."
+    sudo apt install -y openssh-server
+    sudo systemctl enable ssh
+    sudo systemctl start ssh
+    echo "✅ OpenSSH Server installed and started"
 fi
 
 # Install uv
@@ -707,33 +720,6 @@ if [[ "$INSTALL_WHATSAPP" == true ]]; then
     fi
 fi
 
-# Signal
-if [[ "$INSTALL_SIGNAL" == true ]]; then
-    echo "💬 Installing Signal..."
-    wget -O- https://updates.signal.org/desktop/apt/keys.asc | gpg --dearmor > /tmp/signal-desktop-keyring.gpg
-    sudo install -D -o root -g root -m 644 /tmp/signal-desktop-keyring.gpg /etc/apt/keyrings/signal-desktop-keyring.gpg
-    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/signal-desktop-keyring.gpg] https://updates.signal.org/desktop/apt xenial main" | sudo tee /etc/apt/sources.list.d/signal-xenial.list
-    rm /tmp/signal-desktop-keyring.gpg
-    sudo apt update
-    sudo apt install -y signal-desktop
-    echo "✅ Signal installed"
-fi
-
-# Discord
-if [[ "$INSTALL_DISCORD" == true ]]; then
-    if command -v flatpak &>/dev/null; then
-        echo "💬 Installing Discord via Flatpak..."
-        flatpak install -y flathub com.discordapp.Discord
-        echo "✅ Discord installed"
-    else
-        echo "💬 Installing Discord via deb package..."
-        wget -O /tmp/discord.deb "https://discord.com/api/download?platform=linux&format=deb"
-        sudo apt install -y /tmp/discord.deb
-        rm /tmp/discord.deb
-        echo "✅ Discord installed"
-    fi
-fi
-
 # rclone
 if [[ "$INSTALL_RCLONE" == true ]]; then
     echo "☁️  Installing rclone..."
@@ -767,6 +753,29 @@ if [[ "$INSTALL_REMMINA" == true ]]; then
     echo "✅ Remmina installed"
 fi
 
+# Wine (Windows compatibility layer)
+if [[ "$INSTALL_WINE" == true ]]; then
+    echo "🍷 Installing Wine..."
+
+    # Enable 32-bit architecture
+    sudo dpkg --add-architecture i386
+
+    # Create keyrings directory
+    sudo mkdir -pm755 /etc/apt/keyrings
+
+    # Add Wine repository key
+    wget -O - https://dl.winehq.org/wine-builds/winehq.key | sudo gpg --dearmor -o /etc/apt/keyrings/winehq-archive.key -
+
+    # Add Wine repository
+    sudo wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/trixie/winehq-trixie.sources
+
+    # Update and install Wine
+    sudo apt update
+    sudo apt install -y --install-recommends winehq-stable
+
+    echo "✅ Wine installed"
+fi
+
 # Verify installations
 echo ""
 echo "🔍 Current installation status:"
@@ -777,6 +786,9 @@ command -v uv >/dev/null && echo "✅ uv: $(uv --version)"
 command -v git-filter-repo >/dev/null && echo "✅ git-filter-repo: $(git-filter-repo --version 2>&1 | head -n1)"
 command -v git-lfs >/dev/null && echo "✅ git-lfs: $(git-lfs --version | head -n1)"
 command -v tmux >/dev/null && echo "✅ tmux: $(tmux -V)"
+if systemctl is-active --quiet ssh || systemctl is-active --quiet sshd; then
+    echo "✅ OpenSSH Server: Running"
+fi
 
 # Check pyenv/Python
 export PYENV_ROOT="$HOME/.pyenv"
@@ -809,8 +821,6 @@ command -v polybar >/dev/null && echo "✅ Polybar: $(polybar --version | head -
 command -v rofi >/dev/null && echo "✅ Rofi: $(rofi -version | head -n1)"
 command -v picom >/dev/null && echo "✅ Picom: $(picom --version 2>&1 | head -n1)"
 flatpak list 2>/dev/null | grep -q whatsapp && echo "✅ WhatsApp: Installed"
-command -v signal-desktop >/dev/null && echo "✅ Signal: Installed"
-command -v discord >/dev/null || flatpak list 2>/dev/null | grep -q discord && echo "✅ Discord: Installed"
 command -v rclone >/dev/null && echo "✅ rclone: $(rclone --version | head -n1)"
 dpkg -l 2>/dev/null | grep -q plexmediaserver && echo "✅ Plex Media Server: Installed"
 command -v copyq >/dev/null && echo "✅ CopyQ: Installed"

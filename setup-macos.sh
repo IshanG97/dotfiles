@@ -60,6 +60,7 @@ INSTALL_LOGI_OPTIONS=false
 INSTALL_CHATGPT=false
 INSTALL_ADB=false
 INSTALL_SCRCPY=false
+INSTALL_BORDERS=false
 INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
 COPY_GHOSTTY_CONFIG=false
@@ -339,6 +340,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ scrcpy already installed"
+    fi
+
+    # Check borders
+    if ! command -v borders &>/dev/null; then
+        if prompt_yes_no "🔲 Install borders (window border highlights)?"; then
+            INSTALL_BORDERS=true
+        fi
+    else
+        echo "✅ borders already installed"
     fi
 
     # Check Shottr
@@ -778,6 +788,14 @@ if [[ "$INSTALL_SCRCPY" == true ]]; then
     echo "✅ scrcpy installed"
 fi
 
+# borders
+if [[ "$INSTALL_BORDERS" == true ]]; then
+    echo "🔲 Installing borders..."
+    brew tap FelixKratz/formulae
+    brew install borders
+    echo "✅ borders installed"
+fi
+
 # Shottr
 if [[ "$INSTALL_SHOTTR" == true ]]; then
     echo "📸 Installing Shottr..."
@@ -859,6 +877,7 @@ ls /Applications/ 2>/dev/null | grep -qi "logioptionsplus" && echo "✅ Logi Opt
 ls /Applications/ 2>/dev/null | grep -qi "chatgpt" && echo "✅ ChatGPT: Installed"
 command -v adb >/dev/null && echo "✅ Android Platform Tools (ADB): $(adb --version | head -n1)"
 command -v scrcpy >/dev/null && echo "✅ scrcpy: $(scrcpy --version 2>&1 | head -n1)"
+command -v borders >/dev/null && echo "✅ borders: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "shottr" && echo "✅ Shottr: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "windows app" && echo "✅ Windows App: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "visual studio code" && echo "✅ VS Code: Installed"

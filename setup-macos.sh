@@ -47,7 +47,6 @@ INSTALL_LUNAR=false
 INSTALL_MACCY=false
 INSTALL_RAYCAST=false
 INSTALL_GHOSTTY=false
-INSTALL_RECTANGLE=false
 INSTALL_AEROSPACE=false
 INSTALL_GOOGLE_CHROME=false
 INSTALL_PLEX=false
@@ -211,15 +210,6 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
                 COPY_GHOSTTY_CONFIG=true
             fi
         fi
-    fi
-
-    # Check Rectangle
-    if ! ls /Applications/ 2>/dev/null | grep -qi "rectangle"; then
-        if prompt_yes_no "🪟 Install Rectangle (window management)?"; then
-            INSTALL_RECTANGLE=true
-        fi
-    else
-        echo "✅ Rectangle already installed"
     fi
 
     # Check AeroSpace
@@ -679,13 +669,6 @@ if [[ "$COPY_GHOSTTY_CONFIG" == true ]]; then
     fi
 fi
 
-# Rectangle
-if [[ "$INSTALL_RECTANGLE" == true ]]; then
-    echo "🪟 Installing Rectangle..."
-    brew install --cask rectangle
-    echo "✅ Rectangle installed"
-fi
-
 # AeroSpace
 if [[ "$INSTALL_AEROSPACE" == true ]]; then
     echo "✈️  Installing AeroSpace..."
@@ -864,7 +847,6 @@ ls /Applications/ 2>/dev/null | grep -qi "lunar" && echo "✅ Lunar: Installed"
 command -v maccy >/dev/null && echo "✅ Maccy: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "raycast" && echo "✅ Raycast: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "ghostty" && echo "✅ Ghostty: Installed"
-ls /Applications/ 2>/dev/null | grep -qi "rectangle" && echo "✅ Rectangle: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "aerospace" && echo "✅ AeroSpace: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "google chrome" && echo "✅ Google Chrome: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "plex" && echo "✅ Plex Media Server: Installed"

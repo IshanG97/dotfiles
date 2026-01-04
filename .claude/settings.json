@@ -1,5 +1,6 @@
 {
   "includeCoAuthoredBy": false,
+  "alwaysThinkingEnabled": true,
   "permissions": {
     "allowFileAccess": true,
     "allowNetworkAccess": true,

@@ -36,6 +36,7 @@ INSTALL_UV=false
 INSTALL_GIT_FILTER_REPO=false
 INSTALL_GIT_LFS=false
 INSTALL_TMUX=false
+INSTALL_NVIM=false
 INSTALL_BRAVE=false
 INSTALL_VSCODE=false
 INSTALL_VSCODE_CLI=false
@@ -122,6 +123,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ tmux already installed"
+    fi
+
+    # Check nvim
+    if ! command -v nvim &>/dev/null; then
+        if prompt_yes_no "📝 Install Neovim (text editor)?"; then
+            INSTALL_NVIM=true
+        fi
+    else
+        echo "✅ Neovim already installed"
     fi
 
     # Check pyenv
@@ -529,6 +539,13 @@ if [[ "$INSTALL_TMUX" == true ]]; then
     echo "✅ tmux installed"
 fi
 
+# Install nvim
+if [[ "$INSTALL_NVIM" == true ]]; then
+    echo "📝 Installing Neovim..."
+    brew install neovim
+    echo "✅ Neovim installed"
+fi
+
 # Install pyenv
 if [[ "$INSTALL_PYENV" == true ]]; then
     echo "🐍 Installing pyenv..."
@@ -825,6 +842,7 @@ command -v uv >/dev/null && echo "✅ uv: $(uv --version)"
 command -v git-filter-repo >/dev/null && echo "✅ git-filter-repo: $(git-filter-repo --version 2>&1 | head -n1)"
 command -v git-lfs >/dev/null && echo "✅ git-lfs: $(git-lfs --version | head -n1)"
 command -v tmux >/dev/null && echo "✅ tmux: $(tmux -V)"
+command -v nvim >/dev/null && echo "✅ Neovim: $(nvim --version | head -n1)"
 
 # Check pyenv/Python
 export PYENV_ROOT="$HOME/.pyenv"

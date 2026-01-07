@@ -163,23 +163,6 @@ automatically-unhide-macos-hidden-apps = true
     alt-shift-k = ['join-with up', 'mode main']
     alt-shift-l = ['join-with right', 'mode main']
     
-    # Default space for apps
-    [[on-window-detected]]
-    if.app-id ='com.mitchellh.ghostty'
-    run = ['move-node-to-workspace A']
-
-    [[on-window-detected]]
-    if.app-id ='com.microsoft.VSCode'
-    run = ['move-node-to-workspace A']
-   
-    [[on-window-detected]]
-    if.app-id ='com.google.Chrome'
-    run = ['move-node-to-workspace S']
-
-    [[on-window-detected]]
-    if.app-id ='com.brave.Browser'
-    run = ['move-node-to-workspace D']
-
     [[on-window-detected]]
     if.app-id ='com.microsoft.Outlook'
     run = ['move-node-to-workspace Z']

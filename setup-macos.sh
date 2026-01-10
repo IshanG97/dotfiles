@@ -63,6 +63,7 @@ INSTALL_SCRCPY=false
 INSTALL_BORDERS=false
 INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
+INSTALL_MYSQL=false
 INSTALL_MYSQLWORKBENCH=false
 COPY_GHOSTTY_CONFIG=false
 COPY_AEROSPACE_CONFIG=false
@@ -368,6 +369,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ Windows App already installed"
+    fi
+
+    # Check MySQL
+    if ! command -v mysql &>/dev/null; then
+        if prompt_yes_no "🗄️  Install MySQL 8.4 (database server)?"; then
+            INSTALL_MYSQL=true
+        fi
+    else
+        echo "✅ MySQL already installed"
     fi
 
     # Check MySQL Workbench
@@ -820,6 +830,13 @@ if [[ "$INSTALL_WINDOWS_APP" == true ]]; then
     echo "✅ Windows App installed"
 fi
 
+# MySQL
+if [[ "$INSTALL_MYSQL" == true ]]; then
+    echo "🗄️  Installing MySQL 8.4..."
+    brew install mysql@8.4
+    echo "✅ MySQL 8.4 installed"
+fi
+
 # MySQL Workbench
 if [[ "$INSTALL_MYSQLWORKBENCH" == true ]]; then
     echo "🗄️  Installing MySQL Workbench..."
@@ -897,6 +914,7 @@ command -v scrcpy >/dev/null && echo "✅ scrcpy: $(scrcpy --version 2>&1 | head
 command -v borders >/dev/null && echo "✅ borders: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "shottr" && echo "✅ Shottr: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "windows app" && echo "✅ Windows App: Installed"
+command -v mysql >/dev/null && echo "✅ MySQL: $(mysql --version)"
 ls /Applications/ 2>/dev/null | grep -qi "mysqlworkbench" && echo "✅ MySQL Workbench: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "visual studio code" && echo "✅ VS Code: Installed"
 command -v code >/dev/null && echo "✅ VS Code CLI: Available"

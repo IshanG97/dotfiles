@@ -827,6 +827,7 @@ if [[ "$INSTALL_MYSQL" == true ]]; then
     brew install --cask mysqlworkbench
     brew install --cask mysql-shell
     echo "✅ MySQL tools installed (Server 8.4, Workbench, Shell)"
+    echo "📝 NOTE: Set MySQL root password with: mysql -u root -e \"ALTER USER 'root'@'localhost' IDENTIFIED BY 'G1234567';\""
 fi
 
 # Configure macOS settings
@@ -918,8 +919,20 @@ else
 fi
 echo "   git config --global user.name 'Your Name'"
 echo "   git config --global user.email 'your.email@example.com'"
-if [[ "$DISABLE_SPOTLIGHT" == true ]]; then
-    echo "4. Open VS Code and install your preferred extensions"
+if [[ "$INSTALL_MYSQL" == true ]]; then
+    if [[ "$DISABLE_SPOTLIGHT" == true ]]; then
+        echo "4. Set MySQL root password:"
+        echo "   mysql -u root -e \"ALTER USER 'root'@'localhost' IDENTIFIED BY 'G1234567';\""
+        echo "5. Open VS Code and install your preferred extensions"
+    else
+        echo "3. Set MySQL root password:"
+        echo "   mysql -u root -e \"ALTER USER 'root'@'localhost' IDENTIFIED BY 'G1234567';\""
+        echo "4. Open VS Code and install your preferred extensions"
+    fi
 else
-    echo "3. Open VS Code and install your preferred extensions"
+    if [[ "$DISABLE_SPOTLIGHT" == true ]]; then
+        echo "4. Open VS Code and install your preferred extensions"
+    else
+        echo "3. Open VS Code and install your preferred extensions"
+    fi
 fi

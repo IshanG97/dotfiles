@@ -64,7 +64,6 @@ INSTALL_BORDERS=false
 INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
 INSTALL_MYSQL=false
-INSTALL_MYSQLWORKBENCH=false
 COPY_GHOSTTY_CONFIG=false
 COPY_AEROSPACE_CONFIG=false
 DISABLE_SPOTLIGHT=false
@@ -371,22 +370,13 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         echo "✅ Windows App already installed"
     fi
 
-    # Check MySQL
-    if ! command -v mysql &>/dev/null; then
-        if prompt_yes_no "🗄️  Install MySQL 8.4 (database server)?"; then
+    # Check MySQL (combined: server, workbench, and shell)
+    if ! command -v mysql &>/dev/null || ! ls /Applications/ 2>/dev/null | grep -qi "mysqlworkbench" || ! command -v mysqlsh &>/dev/null; then
+        if prompt_yes_no "🗄️  Install MySQL (Server 8.4, Workbench, Shell)?"; then
             INSTALL_MYSQL=true
         fi
     else
-        echo "✅ MySQL already installed"
-    fi
-
-    # Check MySQL Workbench
-    if ! ls /Applications/ 2>/dev/null | grep -qi "mysqlworkbench"; then
-        if prompt_yes_no "🗄️  Install MySQL Workbench (database management tool)?"; then
-            INSTALL_MYSQLWORKBENCH=true
-        fi
-    else
-        echo "✅ MySQL Workbench already installed"
+        echo "✅ MySQL tools already installed"
     fi
 
     # Check Visual Studio Code
@@ -830,18 +820,13 @@ if [[ "$INSTALL_WINDOWS_APP" == true ]]; then
     echo "✅ Windows App installed"
 fi
 
-# MySQL
+# MySQL (Server, Workbench, and Shell)
 if [[ "$INSTALL_MYSQL" == true ]]; then
-    echo "🗄️  Installing MySQL 8.4..."
+    echo "🗄️  Installing MySQL tools..."
     brew install mysql@8.4
-    echo "✅ MySQL 8.4 installed"
-fi
-
-# MySQL Workbench
-if [[ "$INSTALL_MYSQLWORKBENCH" == true ]]; then
-    echo "🗄️  Installing MySQL Workbench..."
     brew install --cask mysqlworkbench
-    echo "✅ MySQL Workbench installed"
+    brew install --cask mysql-shell
+    echo "✅ MySQL tools installed (Server 8.4, Workbench, Shell)"
 fi
 
 # Configure macOS settings
@@ -916,6 +901,7 @@ ls /Applications/ 2>/dev/null | grep -qi "shottr" && echo "✅ Shottr: Installed
 ls /Applications/ 2>/dev/null | grep -qi "windows app" && echo "✅ Windows App: Installed"
 command -v mysql >/dev/null && echo "✅ MySQL: $(mysql --version)"
 ls /Applications/ 2>/dev/null | grep -qi "mysqlworkbench" && echo "✅ MySQL Workbench: Installed"
+command -v mysqlsh >/dev/null && echo "✅ MySQL Shell: $(mysqlsh --version 2>&1 | head -n1)"
 ls /Applications/ 2>/dev/null | grep -qi "visual studio code" && echo "✅ VS Code: Installed"
 command -v code >/dev/null && echo "✅ VS Code CLI: Available"
 

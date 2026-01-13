@@ -78,6 +78,7 @@ $INSTALL_BRAVE = $false
 $INSTALL_VSCODE = $false
 $INSTALL_NVM = $false
 $INSTALL_NODE = $false
+$INSTALL_CLAUDE_CODE = $false
 $INSTALL_PYENV = $false
 $INSTALL_PYTHON = $false
 $INSTALL_FLUX = $false
@@ -184,6 +185,15 @@ if (-not (Test-Command "nvm")) {
     } else {
         Write-Host "[OK] Node.js already installed" -ForegroundColor Green
     }
+}
+
+# Check Claude Code CLI
+if (-not (Test-Command "claude")) {
+    if (Prompt-YesNo "[AI] Install Claude Code CLI (Anthropic)?") {
+        $INSTALL_CLAUDE_CODE = $true
+    }
+} else {
+    Write-Host "[OK] Claude Code CLI already installed" -ForegroundColor Green
 }
 
 # Check applications
@@ -371,6 +381,18 @@ if ($INSTALL_NODE) {
     Write-Host "After restart, run: nvm install lts && nvm use lts" -ForegroundColor Cyan
 }
 
+# Install Claude Code CLI
+if ($INSTALL_CLAUDE_CODE) {
+    Write-Host "[AI] Installing Claude Code CLI..." -ForegroundColor Yellow
+    try {
+        irm https://claude.ai/install.ps1 | iex
+        Write-Host "[OK] Claude Code CLI installed" -ForegroundColor Green
+    } catch {
+        Write-Host "[X] Claude Code CLI installation failed: $($_.Exception.Message)" -ForegroundColor Red
+        exit 1
+    }
+}
+
 
 # Install applications via Winget
 $apps = @(
@@ -431,6 +453,12 @@ if (Test-Command "pyenv") {
 if (Test-Command "nvm") { Write-Host "[OK] NVM: Available" -ForegroundColor Green }
 if (Test-Command "node") { Write-Host "[OK] Node.js: $((node --version).Trim())" -ForegroundColor Green }
 if (Test-Command "npm") { Write-Host "[OK] npm: $((npm --version).Trim())" -ForegroundColor Green }
+if (Test-Command "claude") {
+    try {
+        $claudeVersion = claude --version 2>$null
+        if ($claudeVersion) { Write-Host "[OK] Claude Code CLI: $claudeVersion" -ForegroundColor Green }
+    } catch {}
+}
 
 # Check installed applications
 foreach ($app in $apps) {

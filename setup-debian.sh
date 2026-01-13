@@ -42,6 +42,7 @@ INSTALL_BRAVE=false
 INSTALL_VSCODE=false
 INSTALL_NVM=false
 INSTALL_NODE=false
+INSTALL_CLAUDE_CODE=false
 INSTALL_PYENV=false
 INSTALL_PYTHON=false
 INSTALL_GOOGLE_CHROME=false
@@ -177,6 +178,15 @@ else
             echo "✅ npm already installed"
         fi
     fi
+fi
+
+# Check Claude Code CLI
+if ! command -v claude &>/dev/null; then
+    if prompt_yes_no "🤖 Install Claude Code CLI (Anthropic)?"; then
+        INSTALL_CLAUDE_CODE=true
+    fi
+else
+    echo "✅ Claude Code CLI already installed"
 fi
 
 # Check pyenv
@@ -583,6 +593,23 @@ if [[ "$INSTALL_NODE" == true ]]; then
     echo "✅ npm installed: $(npm --version)"
 fi
 
+# Install Claude Code CLI
+if [[ "$INSTALL_CLAUDE_CODE" == true ]]; then
+    echo "🤖 Installing Claude Code CLI..."
+
+    if ! command -v curl &>/dev/null; then
+        echo "❌ curl is required for this installer but was not found"
+        exit 1
+    fi
+
+    if curl -fsSL https://claude.ai/install.sh | bash; then
+        echo "✅ Claude Code CLI installed"
+    else
+        echo "❌ Claude Code CLI installation failed"
+        exit 1
+    fi
+fi
+
 # Install Flatpak
 if [[ "$INSTALL_FLATPAK" == true ]]; then
     echo "📦 Installing Flatpak..."
@@ -805,6 +832,7 @@ export NVM_DIR="$HOME/.nvm"
 command -v nvm >/dev/null && echo "✅ NVM: $(nvm --version)"
 command -v node >/dev/null && echo "✅ Node.js: $(node --version)"
 command -v npm >/dev/null && echo "✅ npm: $(npm --version)"
+command -v claude >/dev/null && echo "✅ Claude Code CLI: $(claude --version 2>/dev/null | head -n1)"
 
 command -v flatpak >/dev/null && echo "✅ Flatpak: $(flatpak --version)"
 command -v brave-browser >/dev/null && echo "✅ Brave Browser: Installed"

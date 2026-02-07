@@ -7,8 +7,10 @@
 -- Create remote_user for access from any host (used by chears-dotnet and chears-sql-migrations)
 CREATE USER IF NOT EXISTS 'remote_user'@'%' IDENTIFIED BY 'G1234567';
 
--- Grant privileges on all chears databases (chears_new, chears_int, etc.)
+-- Grant privileges on all chears databases
+GRANT ALL PRIVILEGES ON `chears`.* TO 'remote_user'@'%';
 GRANT ALL PRIVILEGES ON `chears_%`.* TO 'remote_user'@'%';
+GRANT ALL PRIVILEGES ON `chears-*`.* TO 'remote_user'@'%';
 GRANT CREATE ON *.* TO 'remote_user'@'%';
 
 -- Apply changes

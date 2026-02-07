@@ -22,6 +22,13 @@ GRANT CREATE ON *.* TO 'remote'@'localhost';
 GRANT CREATE ON *.* TO 'remote'@'127.0.0.1';
 GRANT CREATE ON *.* TO 'remote'@'192.168.1.%';
 
+-- Create remote_user for cross-machine access (used by chears-dotnet and chears-sql-migrations)
+CREATE USER IF NOT EXISTS 'remote_user'@'%' IDENTIFIED BY 'G1234567';
+
+-- Grant privileges on all chears databases (chears_new, chears_int, etc.)
+GRANT ALL PRIVILEGES ON `chears_%`.* TO 'remote_user'@'%';
+GRANT CREATE ON *.* TO 'remote_user'@'%';
+
 -- Apply changes
 FLUSH PRIVILEGES;
 

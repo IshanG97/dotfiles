@@ -62,6 +62,7 @@ INSTALL_CHATGPT=false
 INSTALL_ADB=false
 INSTALL_SCRCPY=false
 INSTALL_BORDERS=false
+INSTALL_LLAMACPP=false
 INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
 INSTALL_MYSQL=false
@@ -351,6 +352,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ borders already installed"
+    fi
+
+    # Check llama.cpp
+    if ! command -v llama-cli &>/dev/null; then
+        if prompt_yes_no "🦙 Install llama.cpp (LLM inference engine)?"; then
+            INSTALL_LLAMACPP=true
+        fi
+    else
+        echo "✅ llama.cpp already installed"
     fi
 
     # Check Shottr
@@ -833,6 +843,13 @@ if [[ "$INSTALL_BORDERS" == true ]]; then
     echo "✅ borders installed"
 fi
 
+# llama.cpp
+if [[ "$INSTALL_LLAMACPP" == true ]]; then
+    echo "🦙 Installing llama.cpp..."
+    brew install llama.cpp
+    echo "✅ llama.cpp installed"
+fi
+
 # Shottr
 if [[ "$INSTALL_SHOTTR" == true ]]; then
     echo "📸 Installing Shottr..."
@@ -926,6 +943,7 @@ ls /Applications/ 2>/dev/null | grep -qi "chatgpt" && echo "✅ ChatGPT: Install
 command -v adb >/dev/null && echo "✅ Android Platform Tools (ADB): $(adb --version | head -n1)"
 command -v scrcpy >/dev/null && echo "✅ scrcpy: $(scrcpy --version 2>&1 | head -n1)"
 command -v borders >/dev/null && echo "✅ borders: Installed"
+command -v llama-cli >/dev/null && echo "✅ llama.cpp: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "shottr" && echo "✅ Shottr: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "windows app" && echo "✅ Windows App: Installed"
 command -v mysql >/dev/null && echo "✅ MySQL: $(mysql --version)"

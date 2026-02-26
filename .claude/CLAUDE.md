@@ -21,6 +21,7 @@ Use these standardized prefixes for all commits:
 - Explain the "why" briefly, not the "what"
 - Use imperative mood: "Add feature" not "Added feature"
 - Retry commits if pre-commit hooks make changes
+- Never commit spec files (*.spec.md, *-spec.md, spec-*.md, etc.) -- these are working documents and should not be checked into version control
 
 ## Security Guidelines
 

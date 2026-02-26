@@ -1,21 +1,38 @@
 {
   "includeCoAuthoredBy": false,
-  "alwaysThinkingEnabled": true,
   "permissions": {
+    "allow": [
+      "Read(**)",
+      "Grep",
+      "Glob",
+      "Task",
+      "WebSearch",
+      "WebFetch",
+      "Bash(command *)",
+      "Bash(git diff *)",
+      "Bash(git status *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(ls *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(wc *)",
+      "Bash(file *)",
+      "Bash(brew list *)",
+      "Bash(adb shell *)",
+      "Bash(osascript *)"
+    ],
     "allowFileAccess": true,
     "allowNetworkAccess": true,
-    "allowShellAccess": true,
-    "allow": [
-	"Bash(command:*)",
-	"Bash(git diff:*)",
-	"WebSearch",
-	"Read(//Applications/**)",
-	"Bash(brew list:*)",
-	"Read(//usr/local/bin/**)",
-  "Bash(adb shell:*)",
-  "Bash(osascript:*)"
-    ]
+    "allowShellAccess": true
   },
+  "alwaysThinkingEnabled": true,
   "preferences": {
     "autoSave": true,
     "showLineNumbers": true,

@@ -66,6 +66,7 @@ INSTALL_LLAMACPP=false
 INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
 INSTALL_MYSQL=false
+INSTALL_DOCKER=false
 COPY_GHOSTTY_CONFIG=false
 COPY_AEROSPACE_CONFIG=false
 DISABLE_SPOTLIGHT=false
@@ -388,6 +389,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ MySQL tools already installed"
+    fi
+
+    # Check Docker
+    if ! command -v docker &>/dev/null; then
+        if prompt_yes_no "🐳 Install Docker?"; then
+            INSTALL_DOCKER=true
+        fi
+    else
+        echo "✅ Docker already installed"
     fi
 
     # Check Visual Studio Code
@@ -874,6 +884,12 @@ if [[ "$INSTALL_MYSQL" == true ]]; then
     echo "📝 NOTE: Set MySQL root password with: mysql -u root -e \"ALTER USER 'root'@'localhost' IDENTIFIED BY 'G1234567';\""
 fi
 
+# Docker
+if [[ "$INSTALL_DOCKER" == true ]]; then
+    echo "🐳 Docker installation requires manual setup."
+    echo "   Follow the instructions at: https://docs.docker.com/desktop/setup/install/mac-install/"
+fi
+
 # Configure macOS settings
 if [[ "$DISABLE_SPOTLIGHT" == true ]] || [[ "$MOVE_DOCK_LEFT" == true ]]; then
     echo ""
@@ -951,6 +967,7 @@ ls /Applications/ 2>/dev/null | grep -qi "mysqlworkbench" && echo "✅ MySQL Wor
 command -v mysqlsh >/dev/null && echo "✅ MySQL Shell: $(mysqlsh --version 2>&1 | head -n1)"
 ls /Applications/ 2>/dev/null | grep -qi "visual studio code" && echo "✅ VS Code: Installed"
 command -v code >/dev/null && echo "✅ VS Code CLI: Available"
+command -v docker >/dev/null && echo "✅ Docker: $(docker --version)"
 
 echo ""
 echo "🎉 macOS setup complete!"

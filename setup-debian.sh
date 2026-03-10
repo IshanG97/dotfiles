@@ -63,6 +63,12 @@ INSTALL_PLEX=false
 INSTALL_COPYQ=false
 INSTALL_REMMINA=false
 INSTALL_WINE=false
+INSTALL_NVIM=false
+INSTALL_GHOSTTY=false
+COPY_GHOSTTY_CONFIG=false
+INSTALL_LLAMACPP=false
+INSTALL_MYSQL=false
+INSTALL_DOCKER=false
 
 # Check if current user needs sudo configuration
 CURRENT_USER=$(whoami)
@@ -128,6 +134,15 @@ else
     echo "✅ tmux already installed"
 fi
 
+# Check nvim
+if ! command -v nvim &>/dev/null; then
+    if prompt_yes_no "📝 Install Neovim (text editor)?"; then
+        INSTALL_NVIM=true
+    fi
+else
+    echo "✅ Neovim already installed"
+fi
+
 # Check openssh-server
 if ! systemctl is-enabled ssh &>/dev/null && ! systemctl is-enabled sshd &>/dev/null; then
     if prompt_yes_no "🔐 Install OpenSSH Server (for remote SSH access)?"; then
@@ -144,6 +159,15 @@ if ! command -v uv &>/dev/null; then
     fi
 else
     echo "✅ uv already installed"
+fi
+
+# Check llama.cpp
+if ! command -v llama-cli &>/dev/null; then
+    if prompt_yes_no "🦙 Install llama.cpp (LLM inference engine)?"; then
+        INSTALL_LLAMACPP=true
+    fi
+else
+    echo "✅ llama.cpp already installed"
 fi
 
 # Check NVM
@@ -406,6 +430,43 @@ if command -v dpkg &>/dev/null; then
     else
         echo "✅ Wine already installed"
     fi
+
+    # Check Ghostty
+    if ! command -v ghostty &>/dev/null && ! flatpak list 2>/dev/null | grep -q ghostty; then
+        if prompt_yes_no "👻 Install Ghostty (terminal emulator)?"; then
+            INSTALL_GHOSTTY=true
+            if [ -f ".config/ghostty/config" ]; then
+                if prompt_yes_no "   Copy Ghostty config from dotfiles to ~/.config/ghostty?"; then
+                    COPY_GHOSTTY_CONFIG=true
+                fi
+            fi
+        fi
+    else
+        echo "✅ Ghostty already installed"
+        if [ -f ".config/ghostty/config" ]; then
+            if prompt_yes_no "👻 Copy Ghostty config from dotfiles to ~/.config/ghostty?"; then
+                COPY_GHOSTTY_CONFIG=true
+            fi
+        fi
+    fi
+
+    # Check MySQL
+    if ! command -v mysql &>/dev/null; then
+        if prompt_yes_no "🗄️  Install MySQL (Server, Workbench, Shell)?"; then
+            INSTALL_MYSQL=true
+        fi
+    else
+        echo "✅ MySQL already installed"
+    fi
+
+    # Check Docker
+    if ! command -v docker &>/dev/null; then
+        if prompt_yes_no "🐳 Install Docker?"; then
+            INSTALL_DOCKER=true
+        fi
+    else
+        echo "✅ Docker already installed"
+    fi
 fi
 
 echo ""
@@ -485,6 +546,13 @@ if [[ "$INSTALL_TMUX" == true ]]; then
     echo "💻 Installing tmux..."
     sudo apt install -y tmux
     echo "✅ tmux installed"
+fi
+
+# Install Neovim
+if [[ "$INSTALL_NVIM" == true ]]; then
+    echo "📝 Installing Neovim..."
+    sudo apt install -y neovim
+    echo "✅ Neovim installed"
 fi
 
 # Install OpenSSH Server
@@ -803,6 +871,58 @@ if [[ "$INSTALL_WINE" == true ]]; then
     echo "✅ Wine installed"
 fi
 
+# Ghostty (via Flatpak)
+if [[ "$INSTALL_GHOSTTY" == true ]]; then
+    if command -v flatpak &>/dev/null; then
+        echo "👻 Installing Ghostty via Flatpak..."
+        flatpak install -y flathub com.mitchellh.ghostty
+        echo "✅ Ghostty installed"
+    else
+        echo "⚠️  Flatpak not available. Install Flatpak first or build Ghostty from source."
+    fi
+fi
+
+# Copy Ghostty config
+if [[ "$COPY_GHOSTTY_CONFIG" == true ]]; then
+    echo "👻 Copying Ghostty config..."
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    mkdir -p ~/.config/ghostty
+    if [ -f "$SCRIPT_DIR/.config/ghostty/config" ]; then
+        cp "$SCRIPT_DIR/.config/ghostty/config" ~/.config/ghostty/config
+        echo "✅ Ghostty config copied to ~/.config/ghostty/config"
+    else
+        echo "⚠️  Ghostty config file not found in dotfiles"
+    fi
+fi
+
+# llama.cpp (build from source)
+if [[ "$INSTALL_LLAMACPP" == true ]]; then
+    echo "🦙 Installing llama.cpp..."
+    sudo apt install -y cmake
+    git clone https://github.com/ggerganov/llama.cpp /tmp/llama.cpp
+    cmake -B /tmp/llama.cpp/build -S /tmp/llama.cpp
+    cmake --build /tmp/llama.cpp/build --config Release
+    sudo cmake --install /tmp/llama.cpp/build
+    rm -rf /tmp/llama.cpp
+    echo "✅ llama.cpp installed"
+fi
+
+# MySQL
+if [[ "$INSTALL_MYSQL" == true ]]; then
+    echo "🗄️  Installing MySQL..."
+    sudo apt install -y mysql-server
+    sudo apt install -y mysql-workbench || echo "⚠️  MySQL Workbench not available via apt. Download from https://dev.mysql.com/downloads/workbench/"
+    sudo apt install -y mysql-shell || echo "⚠️  MySQL Shell not available via apt. Download from https://dev.mysql.com/downloads/shell/"
+    echo "✅ MySQL installed"
+    echo "📝 NOTE: Set MySQL root password with: sudo mysql -e \"ALTER USER 'root'@'localhost' IDENTIFIED BY 'your_password';\""
+fi
+
+# Docker
+if [[ "$INSTALL_DOCKER" == true ]]; then
+    echo "🐳 Docker installation requires manual setup."
+    echo "   Follow the instructions at: https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository"
+fi
+
 # Verify installations
 echo ""
 echo "🔍 Current installation status:"
@@ -853,6 +973,11 @@ command -v rclone >/dev/null && echo "✅ rclone: $(rclone --version | head -n1)
 dpkg -l 2>/dev/null | grep -q plexmediaserver && echo "✅ Plex Media Server: Installed"
 command -v copyq >/dev/null && echo "✅ CopyQ: Installed"
 command -v remmina >/dev/null && echo "✅ Remmina: Installed"
+command -v nvim >/dev/null && echo "✅ Neovim: $(nvim --version | head -n1)"
+command -v ghostty >/dev/null || flatpak list 2>/dev/null | grep -q ghostty && echo "✅ Ghostty: Installed"
+command -v llama-cli >/dev/null && echo "✅ llama.cpp: Installed"
+command -v mysql >/dev/null && echo "✅ MySQL: $(mysql --version)"
+command -v docker >/dev/null && echo "✅ Docker: $(docker --version)"
 
 echo ""
 echo "🎉 Debian setup complete!"

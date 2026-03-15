@@ -46,7 +46,6 @@ INSTALL_CLAUDE_CODE=false
 INSTALL_PYENV=false
 INSTALL_PYTHON=false
 INSTALL_LUNAR=false
-INSTALL_MACCY=false
 INSTALL_RAYCAST=false
 INSTALL_GHOSTTY=false
 INSTALL_AEROSPACE=false
@@ -190,14 +189,6 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         echo "✅ Lunar already installed"
     fi
 
-    # Check Maccy
-    if ! command -v maccy &>/dev/null && ! ls /Applications/ 2>/dev/null | grep -qi "maccy"; then
-        if prompt_yes_no "📋 Install Maccy (clipboard manager)?"; then
-            INSTALL_MACCY=true
-        fi
-    else
-        echo "✅ Maccy already installed"
-    fi
 
     # Check Raycast
     if ! ls /Applications/ 2>/dev/null | grep -qi "raycast"; then
@@ -798,12 +789,6 @@ if [[ "$INSTALL_LUNAR" == true ]]; then
     echo "✅ Lunar installed"
 fi
 
-# Maccy
-if [[ "$INSTALL_MACCY" == true ]]; then
-    echo "📋 Installing Maccy..."
-    brew install maccy
-    echo "✅ Maccy installed"
-fi
 
 # Raycast
 if [[ "$INSTALL_RAYCAST" == true ]]; then
@@ -1180,7 +1165,6 @@ command -v claude >/dev/null && echo "✅ Claude Code CLI: $(claude --version 2>
 
 ls /Applications/ 2>/dev/null | grep -qi "brave" && echo "✅ Brave Browser: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "lunar" && echo "✅ Lunar: Installed"
-command -v maccy >/dev/null && echo "✅ Maccy: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "raycast" && echo "✅ Raycast: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "ghostty" && echo "✅ Ghostty: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "aerospace" && echo "✅ AeroSpace: Installed"

@@ -77,6 +77,12 @@ git filter-repo --path-rename old-folder/:new-folder/
 - Use parameterized queries for database operations
 - Keep dependencies updated and scan for vulnerabilities
 
+## Code Review and Learning
+- When writing code, explain key decisions and trade-offs so the user can learn from the review
+- Name any architectural patterns used so the user can look them up
+- Flag non-obvious idioms or language features with a brief explanation
+- Suggest alternative approaches when relevant
+
 ## Code Quality Standards
 
 ### General Principles

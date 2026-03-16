@@ -65,7 +65,7 @@ INSTALL_REMMINA=false
 INSTALL_WINE=false
 INSTALL_NVIM=false
 INSTALL_GHOSTTY=false
-COPY_GHOSTTY_CONFIG=false
+LINK_DOTFILES=false
 INSTALL_LLAMACPP=false
 INSTALL_MYSQL=false
 INSTALL_DOCKER=false
@@ -435,19 +435,9 @@ if command -v dpkg &>/dev/null; then
     if ! command -v ghostty &>/dev/null && ! flatpak list 2>/dev/null | grep -q ghostty; then
         if prompt_yes_no "👻 Install Ghostty (terminal emulator)?"; then
             INSTALL_GHOSTTY=true
-            if [ -f ".config/ghostty/config" ]; then
-                if prompt_yes_no "   Copy Ghostty config from dotfiles to ~/.config/ghostty?"; then
-                    COPY_GHOSTTY_CONFIG=true
-                fi
-            fi
         fi
     else
         echo "✅ Ghostty already installed"
-        if [ -f ".config/ghostty/config" ]; then
-            if prompt_yes_no "👻 Copy Ghostty config from dotfiles to ~/.config/ghostty?"; then
-                COPY_GHOSTTY_CONFIG=true
-            fi
-        fi
     fi
 
     # Check MySQL
@@ -467,6 +457,11 @@ if command -v dpkg &>/dev/null; then
     else
         echo "✅ Docker already installed"
     fi
+fi
+
+# Link dotfiles
+if prompt_yes_no "Link dotfiles from this repo to home directory?"; then
+    LINK_DOTFILES=true
 fi
 
 echo ""
@@ -882,18 +877,6 @@ if [[ "$INSTALL_GHOSTTY" == true ]]; then
     fi
 fi
 
-# Copy Ghostty config
-if [[ "$COPY_GHOSTTY_CONFIG" == true ]]; then
-    echo "👻 Copying Ghostty config..."
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    mkdir -p ~/.config/ghostty
-    if [ -f "$SCRIPT_DIR/.config/ghostty/config" ]; then
-        cp "$SCRIPT_DIR/.config/ghostty/config" ~/.config/ghostty/config
-        echo "✅ Ghostty config copied to ~/.config/ghostty/config"
-    else
-        echo "⚠️  Ghostty config file not found in dotfiles"
-    fi
-fi
 
 # llama.cpp (build from source)
 if [[ "$INSTALL_LLAMACPP" == true ]]; then
@@ -921,6 +904,66 @@ fi
 if [[ "$INSTALL_DOCKER" == true ]]; then
     echo "🐳 Docker installation requires manual setup."
     echo "   Follow the instructions at: https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository"
+fi
+
+# Link dotfiles
+if [[ "$LINK_DOTFILES" == true ]]; then
+    echo "Linking dotfiles..."
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+    # Helper: symlink a file (backs up existing non-symlink files)
+    link_file() {
+        local src="$1" dest="$2"
+        if [[ ! -f "$src" ]]; then
+            echo "  skip $(basename "$dest") (not found in dotfiles)"
+            return
+        fi
+        if [[ -L "$dest" ]]; then
+            rm "$dest"
+        elif [[ -f "$dest" ]]; then
+            mv "$dest" "$dest.bak"
+            echo "  backup $dest -> $dest.bak"
+        fi
+        ln -s "$src" "$dest"
+        echo "  link $dest"
+    }
+
+    # Helper: symlink a directory (backs up existing non-symlink dirs)
+    link_dir() {
+        local src="$1" dest="$2"
+        if [[ ! -d "$src" ]]; then
+            echo "  skip $(basename "$dest") (not found in dotfiles)"
+            return
+        fi
+        if [[ -L "$dest" ]]; then
+            rm "$dest"
+        elif [[ -d "$dest" ]]; then
+            mv "$dest" "$dest.bak"
+            echo "  backup $dest -> $dest.bak"
+        fi
+        ln -s "$src" "$dest"
+        echo "  link $dest"
+    }
+
+    # Shell config files
+    for f in .bashrc .zprofile .zshrc .tmux.conf; do
+        link_file "$SCRIPT_DIR/$f" "$HOME/$f"
+    done
+
+    # .config directories
+    mkdir -p "$HOME/.config"
+    for d in ghostty nvim btop htop; do
+        link_dir "$SCRIPT_DIR/.config/$d" "$HOME/.config/$d"
+    done
+
+    # Claude Code config
+    mkdir -p "$HOME/.claude"
+    for f in CLAUDE.md settings.json; do
+        link_file "$SCRIPT_DIR/.claude/$f" "$HOME/.claude/$f"
+    done
+    link_dir "$SCRIPT_DIR/.claude/skills" "$HOME/.claude/skills"
+
+    echo "Dotfiles linked"
 fi
 
 # Verify installations

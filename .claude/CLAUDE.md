@@ -1,5 +1,10 @@
 # Development Guidelines
 
+## Project Configuration
+- Never place `.claude/` directories, `CLAUDE.md` files, or any Claude-related config inside repositories (exception: dotfiles repo, which is the source of truth for these configs)
+- Per-project instructions live in `~/.claude/projects/` (path-scoped, outside repos)
+- No references to Claude tooling should appear in code, commits, or repo files
+
 ## Git Commit Standards
 
 ### Conventional Commit Format
@@ -32,45 +37,6 @@ Use these standardized prefixes for all commits:
 - Scan for accidentally committed secrets before pushing
 - Remove secrets from git history if accidentally committed using `git-filter-repo`
 
-### Git History Management with git-filter-repo
-Use `git-filter-repo` for all Git history rewriting tasks:
-
-**Removing Sensitive Data:**
-```bash
-# Remove files containing secrets
-git filter-repo --path secrets.txt --invert-paths
-
-# Replace sensitive text across all files and commit messages
-git filter-repo --replace-text <(echo 'password123==>xxxxxxxx')
-```
-
-**Author/Email Updates:**
-```bash
-# Update contributor information using mailmap
-git filter-repo --mailmap .mailmap
-
-# Direct email changes
-git filter-repo --email-callback 'if email == b"old@example.com": email = b"new@example.com"'
-```
-
-**Commit Message Updates:**
-```bash
-# Standardize commit messages
-git filter-repo --replace-message <(echo 'typo==>corrected')
-
-# Add consistent prefixes
-git filter-repo --message-callback 'message = b"[PROJECT] " + message'
-```
-
-**Repository Restructuring:**
-```bash
-# Extract subdirectory as new repository root
-git filter-repo --subdirectory-filter frontend/
-
-# Move files to new directory structure
-git filter-repo --path-rename old-folder/:new-folder/
-```
-
 ### Code Security
 - Follow security best practices for the language/framework
 - Validate all user inputs
@@ -101,3 +67,4 @@ git filter-repo --path-rename old-folder/:new-folder/
 - Maintain existing test coverage
 - Run full test suite before committing
 - Fix failing tests immediately
+

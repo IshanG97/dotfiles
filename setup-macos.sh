@@ -62,9 +62,7 @@ INSTALL_ADB=false
 INSTALL_SCRCPY=false
 INSTALL_BORDERS=false
 INSTALL_KARABINER=false
-COPY_KARABINER_CONFIG=false
 INSTALL_STARSHIP=false
-COPY_STARSHIP_CONFIG=false
 INSTALL_FZF=false
 INSTALL_ZOXIDE=false
 INSTALL_RIPGREP=false
@@ -74,12 +72,12 @@ INSTALL_EZA=false
 INSTALL_LAZYGIT=false
 INSTALL_DELTA=false
 INSTALL_LLAMACPP=false
+INSTALL_GLAB=false
 INSTALL_SHOTTR=false
 INSTALL_WINDOWS_APP=false
 INSTALL_MYSQL=false
 INSTALL_DOCKER=false
-COPY_GHOSTTY_CONFIG=false
-COPY_AEROSPACE_CONFIG=false
+LINK_DOTFILES=false
 DISABLE_SPOTLIGHT=false
 DISABLE_MISSION_CONTROL_KEYS=false
 MOVE_DOCK_LEFT=false
@@ -218,42 +216,18 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
     if ! ls /Applications/ 2>/dev/null | grep -qi "ghostty"; then
         if prompt_yes_no "👻 Install Ghostty (terminal emulator)?"; then
             INSTALL_GHOSTTY=true
-            # Ask about config if installing Ghostty
-            if [ -f ".config/ghostty/config" ]; then
-                if prompt_yes_no "   Copy Ghostty config from dotfiles to ~/.config/ghostty?"; then
-                    COPY_GHOSTTY_CONFIG=true
-                fi
-            fi
         fi
     else
         echo "✅ Ghostty already installed"
-        # Ask about config if Ghostty exists
-        if [ -f ".config/ghostty/config" ]; then
-            if prompt_yes_no "👻 Copy Ghostty config from dotfiles to ~/.config/ghostty?"; then
-                COPY_GHOSTTY_CONFIG=true
-            fi
-        fi
     fi
 
     # Check AeroSpace
     if ! ls /Applications/ 2>/dev/null | grep -qi "aerospace"; then
         if prompt_yes_no "✈️  Install AeroSpace (tiling window manager)?"; then
             INSTALL_AEROSPACE=true
-            # Ask about config if installing AeroSpace
-            if [ -f ".config/aerospace/aerospace.toml" ]; then
-                if prompt_yes_no "   Copy AeroSpace config from dotfiles to ~/.config/aerospace?"; then
-                    COPY_AEROSPACE_CONFIG=true
-                fi
-            fi
         fi
     else
         echo "✅ AeroSpace already installed"
-        # Ask about config if AeroSpace exists
-        if [ -f ".config/aerospace/aerospace.toml" ]; then
-            if prompt_yes_no "✈️  Copy AeroSpace config from dotfiles to ~/.config/aerospace?"; then
-                COPY_AEROSPACE_CONFIG=true
-            fi
-        fi
     fi
 
     # Check Google Chrome
@@ -359,38 +333,18 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
     if ! ls /Applications/ 2>/dev/null | grep -qi "karabiner"; then
         if prompt_yes_no "Install Karabiner-Elements (keyboard remapper)?"; then
             INSTALL_KARABINER=true
-            if [ -f ".config/karabiner/karabiner.json" ]; then
-                if prompt_yes_no "   Copy Karabiner config from dotfiles?"; then
-                    COPY_KARABINER_CONFIG=true
-                fi
-            fi
         fi
     else
         echo "Karabiner-Elements already installed"
-        if [ -f ".config/karabiner/karabiner.json" ]; then
-            if prompt_yes_no "Copy Karabiner config from dotfiles?"; then
-                COPY_KARABINER_CONFIG=true
-            fi
-        fi
     fi
 
     # Check starship
     if ! command -v starship &>/dev/null; then
         if prompt_yes_no "Install starship (shell prompt)?"; then
             INSTALL_STARSHIP=true
-            if [ -f ".config/starship.toml" ]; then
-                if prompt_yes_no "   Copy starship config from dotfiles?"; then
-                    COPY_STARSHIP_CONFIG=true
-                fi
-            fi
         fi
     else
         echo "starship already installed"
-        if [ -f ".config/starship.toml" ]; then
-            if prompt_yes_no "Copy starship config from dotfiles?"; then
-                COPY_STARSHIP_CONFIG=true
-            fi
-        fi
     fi
 
     # Check fzf
@@ -481,6 +435,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ llama.cpp already installed"
+    fi
+
+    # Check glab
+    if ! command -v glab &>/dev/null; then
+        if prompt_yes_no "Install glab (GitLab CLI)?"; then
+            INSTALL_GLAB=true
+        fi
+    else
+        echo "glab already installed"
     fi
 
     # Check Shottr
@@ -594,6 +557,11 @@ if ! command -v claude &>/dev/null; then
     fi
 else
     echo "✅ Claude Code CLI already installed"
+fi
+
+# Link dotfiles
+if prompt_yes_no "Link dotfiles from this repo to home directory?"; then
+    LINK_DOTFILES=true
 fi
 
 # macOS Appearance Settings
@@ -838,23 +806,6 @@ if [[ "$INSTALL_GHOSTTY" == true ]]; then
     echo "✅ Ghostty installed"
 fi
 
-# Copy Ghostty config
-if [[ "$COPY_GHOSTTY_CONFIG" == true ]]; then
-    echo "👻 Copying Ghostty config..."
-    # Get the directory where this script is located (dotfiles repo)
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-    # Create ~/.config/ghostty directory if it doesn't exist
-    mkdir -p ~/.config/ghostty
-
-    # Copy the config file
-    if [ -f "$SCRIPT_DIR/.config/ghostty/config" ]; then
-        cp "$SCRIPT_DIR/.config/ghostty/config" ~/.config/ghostty/config
-        echo "✅ Ghostty config copied to ~/.config/ghostty/config"
-    else
-        echo "⚠️  Ghostty config file not found in dotfiles"
-    fi
-fi
 
 # AeroSpace
 if [[ "$INSTALL_AEROSPACE" == true ]]; then
@@ -863,23 +814,6 @@ if [[ "$INSTALL_AEROSPACE" == true ]]; then
     echo "✅ AeroSpace installed"
 fi
 
-# Copy AeroSpace config
-if [[ "$COPY_AEROSPACE_CONFIG" == true ]]; then
-    echo "✈️  Copying AeroSpace config..."
-    # Get the directory where this script is located (dotfiles repo)
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-    # Create ~/.config/aerospace directory if it doesn't exist
-    mkdir -p ~/.config/aerospace
-
-    # Copy the config file
-    if [ -f "$SCRIPT_DIR/.config/aerospace/aerospace.toml" ]; then
-        cp "$SCRIPT_DIR/.config/aerospace/aerospace.toml" ~/.config/aerospace/aerospace.toml
-        echo "✅ AeroSpace config copied to ~/.config/aerospace/aerospace.toml"
-    else
-        echo "⚠️  AeroSpace config file not found in dotfiles"
-    fi
-fi
 
 # Google Chrome
 if [[ "$INSTALL_GOOGLE_CHROME" == true ]]; then
@@ -966,19 +900,6 @@ if [[ "$INSTALL_KARABINER" == true ]]; then
     echo "NOTE: Open Karabiner-Elements and grant accessibility permissions"
 fi
 
-# Copy Karabiner config
-if [[ "$COPY_KARABINER_CONFIG" == true ]]; then
-    echo "Copying Karabiner config..."
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-    mkdir -p ~/.config/karabiner
-
-    if [ -f "$SCRIPT_DIR/.config/karabiner/karabiner.json" ]; then
-        cp "$SCRIPT_DIR/.config/karabiner/karabiner.json" ~/.config/karabiner/karabiner.json
-        echo "Karabiner config copied to ~/.config/karabiner/karabiner.json"
-    else
-        echo "Karabiner config file not found in dotfiles"
-    fi
-fi
 
 # starship
 if [[ "$INSTALL_STARSHIP" == true ]]; then
@@ -995,18 +916,6 @@ if [[ "$INSTALL_STARSHIP" == true ]]; then
     echo "starship installed"
 fi
 
-# Copy starship config
-if [[ "$COPY_STARSHIP_CONFIG" == true ]]; then
-    echo "Copying starship config..."
-    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-    if [ -f "$SCRIPT_DIR/.config/starship.toml" ]; then
-        cp "$SCRIPT_DIR/.config/starship.toml" ~/.config/starship.toml
-        echo "starship config copied to ~/.config/starship.toml"
-    else
-        echo "starship config file not found in dotfiles"
-    fi
-fi
 
 # fzf
 if [[ "$INSTALL_FZF" == true ]]; then
@@ -1105,6 +1014,13 @@ if [[ "$INSTALL_LLAMACPP" == true ]]; then
     echo "✅ llama.cpp installed"
 fi
 
+# glab
+if [[ "$INSTALL_GLAB" == true ]]; then
+    echo "Installing glab..."
+    brew install glab
+    echo "glab installed"
+fi
+
 # Shottr
 if [[ "$INSTALL_SHOTTR" == true ]]; then
     echo "📸 Installing Shottr..."
@@ -1180,6 +1096,73 @@ if [[ "$MOVE_DOCK_LEFT" == true ]]; then
     echo "✅ Dock moved to left side"
 fi
 
+# Link dotfiles
+if [[ "$LINK_DOTFILES" == true ]]; then
+    echo "Linking dotfiles..."
+    SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+    # Helper: symlink a file (backs up existing non-symlink files)
+    link_file() {
+        local src="$1" dest="$2"
+        if [[ ! -f "$src" ]]; then
+            echo "  skip $(basename "$dest") (not found in dotfiles)"
+            return
+        fi
+        if [[ -L "$dest" ]]; then
+            rm "$dest"
+        elif [[ -f "$dest" ]]; then
+            mv "$dest" "$dest.bak"
+            echo "  backup $dest -> $dest.bak"
+        fi
+        ln -s "$src" "$dest"
+        echo "  link $dest"
+    }
+
+    # Helper: symlink a directory (backs up existing non-symlink dirs)
+    link_dir() {
+        local src="$1" dest="$2"
+        if [[ ! -d "$src" ]]; then
+            echo "  skip $(basename "$dest") (not found in dotfiles)"
+            return
+        fi
+        if [[ -L "$dest" ]]; then
+            rm "$dest"
+        elif [[ -d "$dest" ]]; then
+            mv "$dest" "$dest.bak"
+            echo "  backup $dest -> $dest.bak"
+        fi
+        ln -s "$src" "$dest"
+        echo "  link $dest"
+    }
+
+    # Shell config files
+    for f in .zprofile .zshrc .tmux.conf; do
+        link_file "$SCRIPT_DIR/$f" "$HOME/$f"
+    done
+
+    # .config directories
+    mkdir -p "$HOME/.config"
+    for d in ghostty nvim btop htop aerospace; do
+        link_dir "$SCRIPT_DIR/.config/$d" "$HOME/.config/$d"
+    done
+
+    # .config files that live inside runtime directories (symlink file, not dir)
+    mkdir -p "$HOME/.config/karabiner"
+    link_file "$SCRIPT_DIR/.config/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+    if [[ -f "$SCRIPT_DIR/.config/starship.toml" ]]; then
+        link_file "$SCRIPT_DIR/.config/starship.toml" "$HOME/.config/starship.toml"
+    fi
+
+    # Claude Code config
+    mkdir -p "$HOME/.claude"
+    for f in CLAUDE.md settings.json; do
+        link_file "$SCRIPT_DIR/.claude/$f" "$HOME/.claude/$f"
+    done
+    link_dir "$SCRIPT_DIR/.claude/skills" "$HOME/.claude/skills"
+
+    echo "Dotfiles linked"
+fi
+
 # Verify installations
 echo ""
 echo "🔍 Current installation status:"
@@ -1235,6 +1218,7 @@ command -v lazygit >/dev/null && echo "lazygit: $(lazygit --version | head -n1)"
 command -v delta >/dev/null && echo "delta: $(delta --version | head -n1)"
 command -v borders >/dev/null && echo "borders: Installed"
 command -v llama-cli >/dev/null && echo "✅ llama.cpp: Installed"
+command -v glab >/dev/null && echo "glab: $(glab --version 2>&1 | head -n1)"
 ls /Applications/ 2>/dev/null | grep -qi "shottr" && echo "✅ Shottr: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "windows app" && echo "✅ Windows App: Installed"
 command -v mysql >/dev/null && echo "✅ MySQL: $(mysql --version)"

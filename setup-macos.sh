@@ -68,6 +68,7 @@ COPY_STARSHIP_CONFIG=false
 INSTALL_FZF=false
 INSTALL_ZOXIDE=false
 INSTALL_RIPGREP=false
+INSTALL_FD=false
 INSTALL_BAT=false
 INSTALL_EZA=false
 INSTALL_LAZYGIT=false
@@ -417,6 +418,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "ripgrep already installed"
+    fi
+
+    # Check fd
+    if ! command -v fd &>/dev/null; then
+        if prompt_yes_no "Install fd (fast file finder, used by Telescope)?"; then
+            INSTALL_FD=true
+        fi
+    else
+        echo "fd already installed"
     fi
 
     # Check bat
@@ -1033,6 +1043,13 @@ if [[ "$INSTALL_RIPGREP" == true ]]; then
     echo "Installing ripgrep..."
     brew install ripgrep
     echo "ripgrep installed"
+fi
+
+# fd
+if [[ "$INSTALL_FD" == true ]]; then
+    echo "Installing fd..."
+    brew install fd
+    echo "fd installed"
 fi
 
 # bat

@@ -58,6 +58,7 @@ INSTALL_WHATSAPP=false
 INSTALL_SPOTIFY=false
 INSTALL_LOGI_OPTIONS=false
 INSTALL_CHATGPT=false
+INSTALL_CLAUDE_DESKTOP=false
 INSTALL_ADB=false
 INSTALL_SCRCPY=false
 INSTALL_BORDERS=false
@@ -309,6 +310,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
         fi
     else
         echo "✅ ChatGPT already installed"
+    fi
+
+    # Check Claude Desktop
+    if ! ls /Applications/ 2>/dev/null | grep -qi "claude"; then
+        if prompt_yes_no "🤖 Install Claude Desktop?"; then
+            INSTALL_CLAUDE_DESKTOP=true
+        fi
+    else
+        echo "✅ Claude Desktop already installed"
     fi
 
     # Check Android Platform Tools (ADB)
@@ -878,6 +888,13 @@ if [[ "$INSTALL_CHATGPT" == true ]]; then
     echo "✅ ChatGPT installed"
 fi
 
+# Claude Desktop
+if [[ "$INSTALL_CLAUDE_DESKTOP" == true ]]; then
+    echo "🤖 Installing Claude Desktop..."
+    brew install --cask claude
+    echo "✅ Claude Desktop installed"
+fi
+
 # Android Platform Tools (ADB)
 if [[ "$INSTALL_ADB" == true ]]; then
     echo "📱 Installing Android Platform Tools (ADB)..."
@@ -1160,6 +1177,15 @@ if [[ "$LINK_DOTFILES" == true ]]; then
     done
     link_dir "$SCRIPT_DIR/.claude/skills" "$HOME/.claude/skills"
 
+    # OpenAI Codex config (shares instructions and skills with Claude Code)
+    mkdir -p "$HOME/.codex"
+    link_file "$SCRIPT_DIR/.codex/config.toml" "$HOME/.codex/config.toml"
+    link_file "$SCRIPT_DIR/.claude/CLAUDE.md" "$HOME/.codex/AGENTS.md"
+
+    # Shared agent skills (both Claude Code and Codex use SKILL.md format)
+    mkdir -p "$HOME/.agents"
+    link_dir "$SCRIPT_DIR/.claude/skills" "$HOME/.agents/skills"
+
     echo "Dotfiles linked"
 fi
 
@@ -1206,6 +1232,7 @@ ls /Applications/ 2>/dev/null | grep -qi "whatsapp" && echo "✅ WhatsApp: Insta
 ls /Applications/ 2>/dev/null | grep -qi "spotify" && echo "✅ Spotify: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "logioptionsplus" && echo "✅ Logi Options+: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "chatgpt" && echo "✅ ChatGPT: Installed"
+ls /Applications/ 2>/dev/null | grep -qi "claude" && echo "✅ Claude Desktop: Installed"
 command -v adb >/dev/null && echo "✅ Android Platform Tools (ADB): $(adb --version | head -n1)"
 command -v scrcpy >/dev/null && echo "✅ scrcpy: $(scrcpy --version 2>&1 | head -n1)"
 command -v starship >/dev/null && echo "starship: $(starship --version | head -n1)"

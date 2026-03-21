@@ -10,6 +10,13 @@ if [[ ! -f /etc/debian_version ]]; then
     exit 1
 fi
 
+# Obsidian vault path (required argument)
+OBSIDIAN_VAULT="${1:?Usage: ./setup-debian.sh /path/to/obsidian/vault}"
+if [[ ! -d "$OBSIDIAN_VAULT/projects" ]]; then
+    echo "Error: $OBSIDIAN_VAULT/projects not found -- is this the right vault path?"
+    exit 1
+fi
+
 # Function to prompt for yes/no
 prompt_yes_no() {
     local prompt="$1"
@@ -956,12 +963,33 @@ if [[ "$LINK_DOTFILES" == true ]]; then
         link_dir "$SCRIPT_DIR/.config/$d" "$HOME/.config/$d"
     done
 
-    # Claude Code config
+    # Obsidian vault symlink (stable path for all tools)
+    link_dir "$OBSIDIAN_VAULT" "$HOME/src/obsidian"
+
+    # Claude Code config (all content lives in vault)
     mkdir -p "$HOME/.claude"
-    for f in CLAUDE.md settings.json; do
-        link_file "$SCRIPT_DIR/.claude/$f" "$HOME/.claude/$f"
+    link_file "$HOME/src/obsidian/projects/claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+    link_file "$HOME/src/obsidian/projects/claude/settings.json" "$HOME/.claude/settings.json"
+    link_dir "$HOME/src/obsidian/projects/claude/skills" "$HOME/.claude/skills"
+
+    # Claude Code project memory (symlink memory dirs into vault)
+    for project in pyfetto-mono chears-shadcn pyfetto-graphs learn; do
+        claude_project_dir="$HOME/.claude/projects/-Users-$(whoami)-src-${project}"
+        mkdir -p "$claude_project_dir"
+        link_dir "$HOME/src/obsidian/projects/claude/$project/memory" "$claude_project_dir/memory"
     done
-    link_dir "$SCRIPT_DIR/.claude/skills" "$HOME/.claude/skills"
+    # pyfetto-mono also has a project-scoped CLAUDE.md
+    link_file "$HOME/src/obsidian/projects/claude/pyfetto-mono/CLAUDE.md" \
+        "$HOME/.claude/projects/-Users-$(whoami)-src-pyfetto-mono/CLAUDE.md"
+
+    # OpenAI Codex config (shares instructions and skills with Claude Code)
+    mkdir -p "$HOME/.codex"
+    link_file "$HOME/src/obsidian/projects/claude/codex-config.toml" "$HOME/.codex/config.toml"
+    link_file "$HOME/src/obsidian/projects/claude/CLAUDE.md" "$HOME/.codex/AGENTS.md"
+
+    # Shared agent skills
+    mkdir -p "$HOME/.agents"
+    link_dir "$HOME/src/obsidian/projects/claude/skills" "$HOME/.agents/skills"
 
     echo "Dotfiles linked"
 fi

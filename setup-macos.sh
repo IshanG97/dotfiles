@@ -576,6 +576,16 @@ else
     echo "✅ Claude Code CLI already installed"
 fi
 
+# Check OpenAI Codex CLI
+INSTALL_CODEX=false
+if ! command -v codex &>/dev/null; then
+    if prompt_yes_no "🤖 Install OpenAI Codex CLI?"; then
+        INSTALL_CODEX=true
+    fi
+else
+    echo "✅ OpenAI Codex CLI already installed"
+fi
+
 # Link dotfiles
 if prompt_yes_no "Link dotfiles from this repo to home directory?"; then
     LINK_DOTFILES=true
@@ -773,7 +783,12 @@ if [[ "$INSTALL_CLAUDE_CODE" == true ]]; then
     fi
 fi
 
-
+# Install OpenAI Codex CLI
+if [[ "$INSTALL_CODEX" == true ]]; then
+    echo "🤖 Installing OpenAI Codex CLI..."
+    brew install --cask codex
+    echo "✅ OpenAI Codex CLI installed"
+fi
 
 # Install applications via Homebrew Cask
 # Brave Browser

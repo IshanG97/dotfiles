@@ -220,6 +220,16 @@ else
     echo "✅ Claude Code CLI already installed"
 fi
 
+# Check OpenAI Codex CLI
+INSTALL_CODEX=false
+if ! command -v codex &>/dev/null; then
+    if prompt_yes_no "🤖 Install OpenAI Codex CLI?"; then
+        INSTALL_CODEX=true
+    fi
+else
+    echo "✅ OpenAI Codex CLI already installed"
+fi
+
 # Check pyenv
 if ! command -v pyenv &>/dev/null; then
     if prompt_yes_no "🐍 Install pyenv (Python version manager)?"; then
@@ -678,6 +688,16 @@ if [[ "$INSTALL_CLAUDE_CODE" == true ]]; then
         echo "❌ Claude Code CLI installation failed"
         exit 1
     fi
+fi
+
+# Install OpenAI Codex CLI
+if [[ "$INSTALL_CODEX" == true ]]; then
+    echo "🤖 Installing OpenAI Codex CLI..."
+    ARCH=$(uname -m)
+    CODEX_URL="https://github.com/openai/codex/releases/latest/download/codex-${ARCH}-unknown-linux-musl.tar.gz"
+    curl -fsSL "$CODEX_URL" | tar xz -C /usr/local/bin 2>/dev/null || \
+    curl -fsSL "$CODEX_URL" | sudo tar xz -C /usr/local/bin
+    echo "✅ OpenAI Codex CLI installed"
 fi
 
 # Install Flatpak

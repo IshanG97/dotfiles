@@ -1078,6 +1078,14 @@ if [[ "$LINK_DOTFILES" == true ]]; then
       done <"$HOME/src/obsidian/projects/agents/plugins.txt"
     fi
 
+    # Post-wiring check: detect any newly-broken symlinks introduced during linking
+    broken_links_after=$(find "$HOME/.claude" "$HOME/.codex" -type l ! -exec test -e {} \; -print 2>/dev/null || true)
+    new_broken=$(comm -23 <(printf '%s\n' "$broken_links_after" | sort -u) <(printf '%s\n' "$broken_links" | sort -u) 2>/dev/null | grep -v '^$' || true)
+    if [[ -n "$new_broken" ]]; then
+      echo "ERROR: new broken symlinks introduced during linking phase:"
+      echo "$new_broken" | sed 's/^/  /'
+    fi
+
   fi # end vault-dependent linking
 
   echo "Dotfiles linked"

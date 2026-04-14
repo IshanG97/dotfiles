@@ -78,6 +78,7 @@ INSTALL_DELTA=false
 INSTALL_LLAMACPP=false
 INSTALL_GLAB=false
 INSTALL_SHOTTR=false
+INSTALL_CYBERDUCK=false
 INSTALL_WINDOWS_APP=false
 INSTALL_MYSQL=false
 INSTALL_DOCKER=false
@@ -468,6 +469,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
     echo "✅ Shottr already installed"
   fi
 
+  # Check Cyberduck
+  if ! ls /Applications/ 2>/dev/null | grep -qi "cyberduck"; then
+    if prompt_yes_no "Install Cyberduck (FTP/cloud storage browser)?"; then
+      INSTALL_CYBERDUCK=true
+    fi
+  else
+    echo "Cyberduck already installed"
+  fi
+
   # Check Windows App
   if ! ls /Applications/ 2>/dev/null | grep -qi "windows app"; then
     if prompt_yes_no "🪟 Install Windows App (Microsoft Remote Desktop)?"; then
@@ -610,6 +620,43 @@ if [[ -z "$OBSIDIAN_VAULT" ]]; then
   elif prompt_yes_no "📓 Set up Obsidian vault (for Claude/Codex config)?"; then
     read -p "   Enter Obsidian vault path: " OBSIDIAN_VAULT
   fi
+fi
+
+# Check Google Drive account (for ~/src/google-drive symlink)
+GOOGLE_ACCOUNT=""
+GDRIVE_BASE="$HOME/Library/CloudStorage"
+if [[ -L "$HOME/src/google-drive" ]]; then
+  current_target=$(readlink "$HOME/src/google-drive")
+  echo "✅ Google Drive already linked -> $current_target"
+  if prompt_yes_no "📁 Re-configure Google Drive account?"; then
+    read -p "   Enter Google account email: " GOOGLE_ACCOUNT
+  else
+    # Extract email from existing symlink path
+    GOOGLE_ACCOUNT=$(echo "$current_target" | sed -n 's|.*/GoogleDrive-\(.*\)/My Drive|\1|p')
+  fi
+elif ls "$GDRIVE_BASE"/GoogleDrive-* &>/dev/null; then
+  # Auto-detect accounts from CloudStorage
+  accounts=()
+  for d in "$GDRIVE_BASE"/GoogleDrive-*/; do
+    acct=$(basename "$d" | sed 's/^GoogleDrive-//')
+    accounts+=("$acct")
+  done
+  if [[ ${#accounts[@]} -eq 1 ]]; then
+    echo "Found Google Drive account: ${accounts[0]}"
+    if prompt_yes_no "📁 Symlink Google Drive to ~/src/google-drive?"; then
+      GOOGLE_ACCOUNT="${accounts[0]}"
+    fi
+  else
+    echo "Found multiple Google Drive accounts:"
+    for i in "${!accounts[@]}"; do
+      echo "  $((i+1))) ${accounts[$i]}"
+    done
+    if prompt_yes_no "📁 Symlink Google Drive to ~/src/google-drive?"; then
+      read -p "   Enter Google account email: " GOOGLE_ACCOUNT
+    fi
+  fi
+elif prompt_yes_no "📁 Set up Google Drive symlink (requires Google Drive app)?"; then
+  read -p "   Enter Google account email: " GOOGLE_ACCOUNT
 fi
 
 # macOS Appearance Settings
@@ -1090,6 +1137,13 @@ if [[ "$INSTALL_SHOTTR" == true ]]; then
   echo "✅ Shottr installed"
 fi
 
+# Cyberduck
+if [[ "$INSTALL_CYBERDUCK" == true ]]; then
+  echo "Installing Cyberduck..."
+  brew install --cask cyberduck
+  echo "Cyberduck installed"
+fi
+
 # Windows App
 if [[ "$INSTALL_WINDOWS_APP" == true ]]; then
   echo "🪟 Installing Windows App..."
@@ -1227,6 +1281,16 @@ if [[ "$LINK_DOTFILES" == true ]]; then
   if [[ -n "$OBSIDIAN_VAULT" && -d "$OBSIDIAN_VAULT/projects" ]]; then
     link_dir "$OBSIDIAN_VAULT" "$HOME/src/obsidian"
 
+    # Google Drive symlink (stable path for agents and scripts)
+    if [[ -n "$GOOGLE_ACCOUNT" ]]; then
+      GDRIVE_CLOUDSTORE="$HOME/Library/CloudStorage/GoogleDrive-${GOOGLE_ACCOUNT}/My Drive"
+      if [[ -d "$GDRIVE_CLOUDSTORE" ]]; then
+        link_dir "$GDRIVE_CLOUDSTORE" "$HOME/src/google-drive"
+      else
+        echo "  skip google-drive (GoogleDrive-${GOOGLE_ACCOUNT} not found in CloudStorage)"
+      fi
+    fi
+
     # Detect broken symlinks from a previous setup run (e.g. after vault rename)
     broken_links=$(find "$HOME/.claude" "$HOME/.codex" -type l ! -exec test -e {} \; -print 2>/dev/null || true)
     if [[ -n "$broken_links" ]]; then
@@ -1347,6 +1411,7 @@ command -v borders >/dev/null && echo "borders: Installed"
 command -v llama-cli >/dev/null && echo "✅ llama.cpp: Installed"
 command -v glab >/dev/null && echo "glab: $(glab --version 2>&1 | head -n1)"
 ls /Applications/ 2>/dev/null | grep -qi "shottr" && echo "✅ Shottr: Installed"
+ls /Applications/ 2>/dev/null | grep -qi "cyberduck" && echo "Cyberduck: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "windows app" && echo "✅ Windows App: Installed"
 command -v mysql >/dev/null && echo "✅ MySQL: $(mysql --version)"
 ls /Applications/ 2>/dev/null | grep -qi "mysqlworkbench" && echo "✅ MySQL Workbench: Installed"

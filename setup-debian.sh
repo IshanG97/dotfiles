@@ -27,6 +27,58 @@ prompt_yes_no() {
   done
 }
 
+git_global_excludes_needs_setup() {
+  if ! command -v git &>/dev/null; then
+    return 0
+  fi
+
+  local excludes_file
+  excludes_file=$(git config --global --get core.excludesfile 2>/dev/null || true)
+
+  if [[ -z "$excludes_file" ]] || [[ ! -f "$excludes_file" ]]; then
+    return 0
+  fi
+
+  local entry
+  for entry in "CLAUDE.md" ".DS_Store" ".env"; do
+    if ! grep -Fxq "$entry" "$excludes_file"; then
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+configure_git_global_excludes() {
+  if ! command -v git &>/dev/null; then
+    echo "Skipping Git global excludes setup because Git is not installed"
+    return
+  fi
+
+  local excludes_file
+  excludes_file=$(git config --global --get core.excludesfile 2>/dev/null || true)
+
+  if [[ -z "$excludes_file" ]]; then
+    excludes_file="$HOME/.config/git/ignore"
+  fi
+
+  if [[ -e "$excludes_file" && ! -f "$excludes_file" ]]; then
+    echo "Skipping Git global excludes setup because $excludes_file is not a regular file"
+    return
+  fi
+
+  mkdir -p "$(dirname "$excludes_file")"
+  touch "$excludes_file"
+
+  local entry
+  for entry in "CLAUDE.md" ".DS_Store" ".env"; do
+    grep -Fxq "$entry" "$excludes_file" || printf '%s\n' "$entry" >>"$excludes_file"
+  done
+
+  git config --global core.excludesfile "$excludes_file"
+  echo "Configured Git global excludes: $excludes_file"
+}
+
 echo ""
 echo "📋 Let's configure what to install..."
 echo ""
@@ -36,6 +88,7 @@ CONFIGURE_SUDO=false
 INSTALL_BUILD_ESSENTIAL=false
 INSTALL_CURL=false
 INSTALL_GIT=false
+CONFIGURE_GLOBAL_GIT_EXCLUDES=false
 INSTALL_UV=false
 INSTALL_GIT_FILTER_REPO=false
 INSTALL_GIT_LFS=false
@@ -108,6 +161,16 @@ if ! command -v git &>/dev/null; then
   fi
 else
   echo "✅ Git already installed"
+fi
+
+if [[ "$INSTALL_GIT" == true ]] || command -v git &>/dev/null; then
+  if git_global_excludes_needs_setup; then
+    if prompt_yes_no "Configure Git global excludes for CLAUDE.md, .DS_Store, and .env?"; then
+      CONFIGURE_GLOBAL_GIT_EXCLUDES=true
+    fi
+  else
+    echo "✅ Git global excludes already cover CLAUDE.md, .DS_Store, and .env"
+  fi
 fi
 
 # Check git-filter-repo
@@ -558,6 +621,10 @@ if [[ "$INSTALL_GIT" == true ]]; then
   echo "📚 Installing Git..."
   sudo apt install -y git
   echo "✅ Git installed"
+fi
+
+if [[ "$CONFIGURE_GLOBAL_GIT_EXCLUDES" == true ]]; then
+  configure_git_global_excludes
 fi
 
 # Install git-filter-repo

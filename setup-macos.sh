@@ -131,6 +131,7 @@ INSTALL_LAZYGIT=false
 INSTALL_DELTA=false
 INSTALL_LLAMACPP=false
 INSTALL_GLAB=false
+INSTALL_GH=false
 INSTALL_SHOTTR=false
 INSTALL_CYBERDUCK=false
 INSTALL_WINDOWS_APP=false
@@ -531,6 +532,15 @@ if [[ "$INSTALL_HOMEBREW" == true ]] || command -v brew &>/dev/null; then
     fi
   else
     echo "glab already installed"
+  fi
+
+  # Check gh
+  if ! command -v gh &>/dev/null; then
+    if prompt_yes_no "Install gh (GitHub CLI)?"; then
+      INSTALL_GH=true
+    fi
+  else
+    echo "gh already installed"
   fi
 
   # Check Shottr
@@ -1214,6 +1224,13 @@ if [[ "$INSTALL_GLAB" == true ]]; then
   echo "glab installed"
 fi
 
+# gh
+if [[ "$INSTALL_GH" == true ]]; then
+  echo "Installing gh..."
+  brew install gh
+  echo "gh installed"
+fi
+
 # Shottr
 if [[ "$INSTALL_SHOTTR" == true ]]; then
   echo "📸 Installing Shottr..."
@@ -1504,6 +1521,7 @@ command -v delta >/dev/null && echo "delta: $(delta --version | head -n1)"
 command -v borders >/dev/null && echo "borders: Installed"
 command -v llama-cli >/dev/null && echo "✅ llama.cpp: Installed"
 command -v glab >/dev/null && echo "glab: $(glab --version 2>&1 | head -n1)"
+command -v gh >/dev/null && echo "gh: $(gh --version 2>&1 | head -n1)"
 ls /Applications/ 2>/dev/null | grep -qi "shottr" && echo "✅ Shottr: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "cyberduck" && echo "Cyberduck: Installed"
 ls /Applications/ 2>/dev/null | grep -qi "windows app" && echo "✅ Windows App: Installed"

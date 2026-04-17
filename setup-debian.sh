@@ -93,6 +93,7 @@ INSTALL_UV=false
 INSTALL_GIT_FILTER_REPO=false
 INSTALL_GIT_LFS=false
 INSTALL_TMUX=false
+INSTALL_GH=false
 INSTALL_OPENSSH_SERVER=false
 INSTALL_BRAVE=false
 INSTALL_VSCODE=false
@@ -189,6 +190,15 @@ if ! command -v git-lfs &>/dev/null; then
   fi
 else
   echo "✅ git-lfs already installed"
+fi
+
+# Check gh (GitHub CLI)
+if ! command -v gh &>/dev/null; then
+  if prompt_yes_no "Install gh (GitHub CLI)?"; then
+    INSTALL_GH=true
+  fi
+else
+  echo "✅ gh already installed"
 fi
 
 # Check tmux
@@ -640,6 +650,18 @@ if [[ "$INSTALL_GIT_LFS" == true ]]; then
   sudo apt install -y git-lfs
   git lfs install
   echo "✅ git-lfs installed"
+fi
+
+# Install gh (GitHub CLI)
+if [[ "$INSTALL_GH" == true ]]; then
+  echo "Installing gh (GitHub CLI)..."
+  sudo mkdir -p -m 755 /etc/apt/keyrings
+  wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
+  sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+  sudo apt update
+  sudo apt install -y gh
+  echo "✅ gh installed"
 fi
 
 # Install tmux
@@ -1167,6 +1189,7 @@ command -v git >/dev/null && echo "✅ Git: $(git --version)"
 command -v uv >/dev/null && echo "✅ uv: $(uv --version)"
 command -v git-filter-repo >/dev/null && echo "✅ git-filter-repo: $(git-filter-repo --version 2>&1 | head -n1)"
 command -v git-lfs >/dev/null && echo "✅ git-lfs: $(git-lfs --version | head -n1)"
+command -v gh >/dev/null && echo "✅ gh: $(gh --version 2>&1 | head -n1)"
 command -v tmux >/dev/null && echo "✅ tmux: $(tmux -V)"
 if systemctl is-active --quiet ssh || systemctl is-active --quiet sshd; then
   echo "✅ OpenSSH Server: Running"

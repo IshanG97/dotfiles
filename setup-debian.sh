@@ -162,7 +162,7 @@ fi
 # the non-free component, so this also enables contrib + non-free in sources.list.
 if lspci 2>/dev/null | grep -qi 'nvidia'; then
   if ! command -v nvidia-smi &>/dev/null; then
-    if prompt_yes_no "🎮 NVIDIA GPU detected. Install nvidia-driver (enables contrib + non-free, requires reboot)?"; then
+    if prompt_yes_no "🎮 NVIDIA GPU detected. Install nvidia-driver (enables contrib + non-free + non-free-firmware, may require MOK enrollment under Secure Boot, requires reboot)?"; then
       INSTALL_NVIDIA_DRIVER=true
     fi
   else
@@ -744,11 +744,12 @@ if [[ "$CONFIGURE_SUDO" == true ]]; then
   fi
 fi
 
-# Enable contrib + non-free components if NVIDIA driver was requested.
-# nvidia-driver lives in non-free. Idempotent: only adds a component when missing.
+# Enable contrib + non-free + non-free-firmware components if NVIDIA driver was requested.
+# nvidia-driver lives in non-free; firmware-misc-nonfree lives in non-free-firmware
+# (split out in Debian 12+). Idempotent: only adds a component when missing.
 if [[ "$INSTALL_NVIDIA_DRIVER" == true ]]; then
-  echo "🔧 Enabling contrib + non-free components in /etc/apt/sources.list..."
-  for component in contrib non-free; do
+  echo "🔧 Enabling contrib + non-free + non-free-firmware components in /etc/apt/sources.list..."
+  for component in contrib non-free non-free-firmware; do
     # Match each active deb/deb-src line for trixie suites that lacks the component as a standalone word
     sudo awk -v c="$component" '
       /^[[:space:]]*#/ { print; next }
@@ -766,10 +767,31 @@ echo "📦 Updating package list..."
 sudo apt update
 
 # Install NVIDIA proprietary driver (provides nvidia-smi). Reboot required.
+# nvidia-kernel-dkms (pulled by nvidia-driver) auto-generates a MOK keypair at
+# /var/lib/dkms/mok.{key,pub} on first install and signs the built modules with
+# it. Under Secure Boot the public half must be enrolled with the firmware via
+# mokutil before the kernel will load the modules — without this step,
+# nvidia-smi will never work post-reboot.
 if [[ "$INSTALL_NVIDIA_DRIVER" == true ]]; then
   echo "🎮 Installing nvidia-driver..."
-  sudo apt install -y nvidia-driver firmware-misc-nonfree linux-headers-amd64
-  echo "✅ nvidia-driver installed — reboot required for kernel module to load"
+  sudo apt install -y nvidia-driver firmware-misc-nonfree linux-headers-amd64 mokutil
+  echo "✅ nvidia-driver installed"
+
+  if mokutil --sb-state 2>/dev/null | grep -qi 'enabled'; then
+    echo "🔐 Secure Boot is enabled — enrolling DKMS module signing key..."
+    if [[ -f /var/lib/dkms/mok.pub ]]; then
+      echo "   You will be prompted to set a one-time password (8+ chars, entered twice)."
+      echo "   Remember it — you will need it on next boot in the blue MOK Manager screen."
+      sudo mokutil --import /var/lib/dkms/mok.pub
+      echo "✅ MOK import queued. On reboot: blue MOK Manager screen → Enroll MOK → View key → Continue → Yes → enter password → Reboot."
+    else
+      echo "⚠️  /var/lib/dkms/mok.pub not found — DKMS may not have built modules yet."
+      echo "    After the next reboot, run: sudo mokutil --import /var/lib/dkms/mok.pub && sudo reboot"
+    fi
+  else
+    echo "ℹ️  Secure Boot is disabled — no MOK enrollment needed."
+  fi
+  echo "✅ Reboot required for kernel module to load."
 fi
 
 # Install build-essential

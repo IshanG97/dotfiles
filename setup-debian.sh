@@ -137,6 +137,7 @@ INSTALL_EZA=false
 INSTALL_LAZYGIT=false
 INSTALL_DELTA=false
 INSTALL_GLAB=false
+INSTALL_NVIDIA_DRIVER=false
 
 # Check if current user needs sudo configuration
 CURRENT_USER=$(whoami)
@@ -155,6 +156,18 @@ if ! dpkg -l | grep -q "^ii  build-essential"; then
   fi
 else
   echo "✅ build-essential already installed"
+fi
+
+# Check NVIDIA proprietary driver (provides nvidia-smi). Debian ships it in
+# the non-free component, so this also enables contrib + non-free in sources.list.
+if lspci 2>/dev/null | grep -qi 'nvidia'; then
+  if ! command -v nvidia-smi &>/dev/null; then
+    if prompt_yes_no "🎮 NVIDIA GPU detected. Install nvidia-driver (enables contrib + non-free, requires reboot)?"; then
+      INSTALL_NVIDIA_DRIVER=true
+    fi
+  else
+    echo "✅ nvidia-driver already installed"
+  fi
 fi
 
 # Check curl
@@ -718,9 +731,33 @@ if [[ "$CONFIGURE_SUDO" == true ]]; then
   fi
 fi
 
+# Enable contrib + non-free components if NVIDIA driver was requested.
+# nvidia-driver lives in non-free. Idempotent: only adds a component when missing.
+if [[ "$INSTALL_NVIDIA_DRIVER" == true ]]; then
+  echo "🔧 Enabling contrib + non-free components in /etc/apt/sources.list..."
+  for component in contrib non-free; do
+    # Match each active deb/deb-src line for trixie suites that lacks the component as a standalone word
+    sudo awk -v c="$component" '
+      /^[[:space:]]*#/ { print; next }
+      /^[[:space:]]*deb(-src)?[[:space:]]+[^[:space:]]+[[:space:]]+(trixie|trixie-security|trixie-updates)([[:space:]]|$)/ {
+        # Word-boundary match: surround line with spaces and look for " c "
+        if (index(" " $0 " ", " " c " ") == 0) { sub(/[[:space:]]*$/, " " c, $0) }
+      }
+      { print }
+    ' /etc/apt/sources.list | sudo tee /etc/apt/sources.list.tmp >/dev/null && sudo mv /etc/apt/sources.list.tmp /etc/apt/sources.list
+  done
+fi
+
 # Update package list
 echo "📦 Updating package list..."
 sudo apt update
+
+# Install NVIDIA proprietary driver (provides nvidia-smi). Reboot required.
+if [[ "$INSTALL_NVIDIA_DRIVER" == true ]]; then
+  echo "🎮 Installing nvidia-driver..."
+  sudo apt install -y nvidia-driver firmware-misc-nonfree
+  echo "✅ nvidia-driver installed — reboot required for kernel module to load"
+fi
 
 # Install build-essential
 if [[ "$INSTALL_BUILD_ESSENTIAL" == true ]]; then
@@ -1225,24 +1262,22 @@ fi
 if [[ "$INSTALL_FD" == true ]]; then
   echo "Installing fd..."
   sudo apt install -y fd-find
-  # Symlink fdfind -> fd in ~/.local/bin so the standard `fd` command works
-  mkdir -p "$HOME/.local/bin"
-  if [ ! -e "$HOME/.local/bin/fd" ] && command -v fdfind &>/dev/null; then
-    ln -s "$(command -v fdfind)" "$HOME/.local/bin/fd"
+  # Symlink fdfind -> fd in /usr/local/bin so the standard `fd` command works
+  if [ ! -e /usr/local/bin/fd ] && command -v fdfind &>/dev/null; then
+    sudo ln -s "$(command -v fdfind)" /usr/local/bin/fd
   fi
-  echo "fd installed (symlinked fdfind -> ~/.local/bin/fd)"
+  echo "fd installed (symlinked fdfind -> /usr/local/bin/fd)"
 fi
 
 # bat (Debian package is bat, binary is batcat to avoid name conflict)
 if [[ "$INSTALL_BAT" == true ]]; then
   echo "Installing bat..."
   sudo apt install -y bat
-  # Symlink batcat -> bat in ~/.local/bin so the standard `bat` command works
-  mkdir -p "$HOME/.local/bin"
-  if [ ! -e "$HOME/.local/bin/bat" ] && command -v batcat &>/dev/null; then
-    ln -s "$(command -v batcat)" "$HOME/.local/bin/bat"
+  # Symlink batcat -> bat in /usr/local/bin so the standard `bat` command works
+  if [ ! -e /usr/local/bin/bat ] && command -v batcat &>/dev/null; then
+    sudo ln -s "$(command -v batcat)" /usr/local/bin/bat
   fi
-  echo "bat installed (symlinked batcat -> ~/.local/bin/bat)"
+  echo "bat installed (symlinked batcat -> /usr/local/bin/bat)"
 fi
 
 # eza
@@ -1366,6 +1401,11 @@ if [[ "$LINK_DOTFILES" == true ]]; then
   for d in ghostty nvim btop htop; do
     link_dir "$SCRIPT_DIR/.config/$d" "$HOME/.config/$d"
   done
+
+  # .config files (symlink file, not dir)
+  if [[ -f "$SCRIPT_DIR/.config/starship.toml" ]]; then
+    link_file "$SCRIPT_DIR/.config/starship.toml" "$HOME/.config/starship.toml"
+  fi
 
   # Obsidian vault symlink (stable path for all tools)
   if [[ -z "$OBSIDIAN_VAULT" ]]; then
@@ -1505,18 +1545,18 @@ command -v copyq >/dev/null && echo "✅ CopyQ: Installed"
 command -v remmina >/dev/null && echo "✅ Remmina: Installed"
 command -v nvim >/dev/null && echo "✅ Neovim: $(nvim --version | head -n1)"
 command -v ghostty >/dev/null || flatpak list 2>/dev/null | grep -q ghostty && echo "✅ Ghostty: Installed"
-command -v starship >/dev/null && echo "starship: $(starship --version | head -n1)"
-command -v fzf >/dev/null && echo "fzf: $(fzf --version | head -n1)"
-command -v zoxide >/dev/null && echo "zoxide: $(zoxide --version | head -n1)"
-command -v rg >/dev/null && echo "ripgrep: $(rg --version | head -n1)"
-command -v fd >/dev/null && echo "fd: $(fd --version | head -n1)"
-command -v fdfind >/dev/null && ! command -v fd >/dev/null && echo "fd (fdfind): $(fdfind --version | head -n1)"
-command -v bat >/dev/null && echo "bat: $(bat --version | head -n1)"
-command -v batcat >/dev/null && ! command -v bat >/dev/null && echo "bat (batcat): $(batcat --version | head -n1)"
-command -v eza >/dev/null && echo "eza: $(eza --version | head -n1)"
-command -v lazygit >/dev/null && echo "lazygit: $(lazygit --version | head -n1)"
-command -v delta >/dev/null && echo "delta: $(delta --version | head -n1)"
-command -v glab >/dev/null && echo "glab: $(glab --version 2>&1 | head -n1)"
+command -v starship >/dev/null && echo "✅ starship: $(starship --version | head -n1)"
+command -v fzf >/dev/null && echo "✅ fzf: $(fzf --version | head -n1)"
+command -v zoxide >/dev/null && echo "✅ zoxide: $(zoxide --version | head -n1)"
+command -v rg >/dev/null && echo "✅ ripgrep: $(rg --version | head -n1)"
+command -v fd >/dev/null && echo "✅ fd: $(fd --version | head -n1)"
+command -v fdfind >/dev/null && ! command -v fd >/dev/null && echo "✅ fd (fdfind): $(fdfind --version | head -n1)"
+command -v bat >/dev/null && echo "✅ bat: $(bat --version | head -n1)"
+command -v batcat >/dev/null && ! command -v bat >/dev/null && echo "✅ bat (batcat): $(batcat --version | head -n1)"
+command -v eza >/dev/null && echo "✅ eza: $(eza --version | head -n1)"
+command -v lazygit >/dev/null && echo "✅ lazygit: $(lazygit --version | head -n1)"
+command -v delta >/dev/null && echo "✅ delta: $(delta --version | head -n1)"
+command -v glab >/dev/null && echo "✅ glab: $(glab --version 2>&1 | head -n1)"
 command -v llama-cli >/dev/null && echo "✅ llama.cpp: Installed"
 command -v mysql >/dev/null && echo "✅ MySQL: $(mysql --version)"
 command -v docker >/dev/null && echo "✅ Docker: $(docker --version)"

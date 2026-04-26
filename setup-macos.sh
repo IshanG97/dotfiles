@@ -861,19 +861,17 @@ if [[ "$INSTALL_PYENV" == true ]]; then
   brew install pyenv
 
   # Add pyenv to .zshrc
-  if ! grep -q 'eval "$(pyenv init -)"' ~/.zshrc 2>/dev/null; then
+  if ! grep -q 'pyenv init' ~/.zshrc 2>/dev/null; then
     echo '' >>~/.zshrc
     echo '# pyenv configuration' >>~/.zshrc
     echo 'export PYENV_ROOT="$HOME/.pyenv"' >>~/.zshrc
-    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >>~/.zshrc
-    echo 'eval "$(pyenv init --path)"' >>~/.zshrc
-    echo 'eval "$(pyenv init -)"' >>~/.zshrc
+    echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >>~/.zshrc
+    echo 'eval "$(pyenv init - zsh)"' >>~/.zshrc
   fi
 
   # Load pyenv for this session
   export PYENV_ROOT="$HOME/.pyenv"
   export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
 
   echo "✅ pyenv installed"
@@ -884,7 +882,6 @@ if [[ "$INSTALL_PYTHON" == true ]]; then
   # Ensure pyenv is loaded
   export PYENV_ROOT="$HOME/.pyenv"
   export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
 
   echo "🐍 Installing Python $PYTHON_VERSION via pyenv..."
@@ -1479,7 +1476,6 @@ command -v nvim >/dev/null && echo "✅ Neovim: $(nvim --version | head -n1)"
 # Check pyenv/Python
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)" 2>/dev/null
 eval "$(pyenv init -)" 2>/dev/null
 command -v pyenv >/dev/null && echo "✅ pyenv: $(pyenv --version)"
 command -v python >/dev/null && echo "✅ Python: $(python --version)"

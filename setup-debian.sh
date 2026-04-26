@@ -502,10 +502,14 @@ if command -v dpkg &>/dev/null; then
     echo "✅ Transmission already installed"
   fi
 
-  # Check Obsidian (via Flatpak or AppImage)
+  # Check Obsidian (via Flatpak)
   if ! command -v obsidian &>/dev/null && ! flatpak list 2>/dev/null | grep -q obsidian; then
-    if prompt_yes_no "📝 Install Obsidian (note-taking app)?"; then
+    if prompt_yes_no "📝 Install Obsidian (note-taking app, via Flatpak)?"; then
       INSTALL_OBSIDIAN=true
+      if ! command -v flatpak &>/dev/null && [[ "$INSTALL_FLATPAK" != true ]]; then
+        echo "   ↳ Flatpak is required for Obsidian — will install Flatpak as well"
+        INSTALL_FLATPAK=true
+      fi
     fi
   else
     echo "✅ Obsidian already installed"
@@ -598,8 +602,12 @@ if command -v dpkg &>/dev/null; then
 
   # Check WhatsApp (via Flatpak)
   if ! flatpak list 2>/dev/null | grep -q whatsapp; then
-    if prompt_yes_no "💬 Install WhatsApp (unofficial client via Flatpak)?"; then
+    if prompt_yes_no "💬 Install WhatsApp (unofficial client, via Flatpak)?"; then
       INSTALL_WHATSAPP=true
+      if ! command -v flatpak &>/dev/null && [[ "$INSTALL_FLATPAK" != true ]]; then
+        echo "   ↳ Flatpak is required for WhatsApp — will install Flatpak as well"
+        INSTALL_FLATPAK=true
+      fi
     fi
   else
     echo "✅ WhatsApp already installed"
@@ -650,10 +658,15 @@ if command -v dpkg &>/dev/null; then
     echo "✅ Wine already installed"
   fi
 
-  # Check Ghostty
+  # Check Ghostty (requires Flatpak)
   if ! command -v ghostty &>/dev/null && ! flatpak list 2>/dev/null | grep -q ghostty; then
-    if prompt_yes_no "👻 Install Ghostty (terminal emulator)?"; then
+    if prompt_yes_no "👻 Install Ghostty (terminal emulator, via Flatpak)?"; then
       INSTALL_GHOSTTY=true
+      # Ghostty installs via Flatpak — ensure Flatpak gets installed too
+      if ! command -v flatpak &>/dev/null && [[ "$INSTALL_FLATPAK" != true ]]; then
+        echo "   ↳ Flatpak is required for Ghostty — will install Flatpak as well"
+        INSTALL_FLATPAK=true
+      fi
     fi
   else
     echo "✅ Ghostty already installed"

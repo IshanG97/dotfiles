@@ -114,7 +114,6 @@ INSTALL_I3=false
 INSTALL_POLYBAR=false
 INSTALL_ROFI=false
 INSTALL_PICOM=false
-INSTALL_FLATPAK=false
 INSTALL_WHATSAPP=false
 INSTALL_RCLONE=false
 INSTALL_PLEX=false
@@ -455,15 +454,6 @@ else
   echo "glab already installed"
 fi
 
-# Check Flatpak
-if ! command -v flatpak &>/dev/null; then
-  if prompt_yes_no "📦 Install Flatpak (universal package manager)?"; then
-    INSTALL_FLATPAK=true
-  fi
-else
-  echo "✅ Flatpak already installed"
-fi
-
 # GUI Applications
 if command -v dpkg &>/dev/null; then
   # Check Brave Browser
@@ -502,14 +492,10 @@ if command -v dpkg &>/dev/null; then
     echo "✅ Transmission already installed"
   fi
 
-  # Check Obsidian (via Flatpak)
-  if ! command -v obsidian &>/dev/null && ! flatpak list 2>/dev/null | grep -q obsidian; then
-    if prompt_yes_no "📝 Install Obsidian (note-taking app, via Flatpak)?"; then
+  # Check Obsidian (official .deb)
+  if ! command -v obsidian &>/dev/null && ! dpkg -l | grep -q "^ii  obsidian"; then
+    if prompt_yes_no "📝 Install Obsidian (note-taking app)?"; then
       INSTALL_OBSIDIAN=true
-      if ! command -v flatpak &>/dev/null && [[ "$INSTALL_FLATPAK" != true ]]; then
-        echo "   ↳ Flatpak is required for Obsidian — will install Flatpak as well"
-        INSTALL_FLATPAK=true
-      fi
     fi
   else
     echo "✅ Obsidian already installed"
@@ -600,17 +586,13 @@ if command -v dpkg &>/dev/null; then
     fi
   fi
 
-  # Check WhatsApp (via Flatpak)
-  if ! flatpak list 2>/dev/null | grep -q whatsapp; then
-    if prompt_yes_no "💬 Install WhatsApp (unofficial client, via Flatpak)?"; then
+  # Check WasIstLos (community WhatsApp client, formerly whatsapp-for-linux)
+  if ! command -v wasistlos &>/dev/null && ! dpkg -l | grep -q "^ii  wasistlos"; then
+    if prompt_yes_no "💬 Install WasIstLos (community WhatsApp client)?"; then
       INSTALL_WHATSAPP=true
-      if ! command -v flatpak &>/dev/null && [[ "$INSTALL_FLATPAK" != true ]]; then
-        echo "   ↳ Flatpak is required for WhatsApp — will install Flatpak as well"
-        INSTALL_FLATPAK=true
-      fi
     fi
   else
-    echo "✅ WhatsApp already installed"
+    echo "✅ WasIstLos (WhatsApp) already installed"
   fi
 
   # Check rclone (Google Drive alternative)
@@ -658,15 +640,10 @@ if command -v dpkg &>/dev/null; then
     echo "✅ Wine already installed"
   fi
 
-  # Check Ghostty (requires Flatpak)
-  if ! command -v ghostty &>/dev/null && ! flatpak list 2>/dev/null | grep -q ghostty; then
-    if prompt_yes_no "👻 Install Ghostty (terminal emulator, via Flatpak)?"; then
+  # Check Ghostty (community Debian apt repo)
+  if ! command -v ghostty &>/dev/null; then
+    if prompt_yes_no "👻 Install Ghostty (terminal emulator)?"; then
       INSTALL_GHOSTTY=true
-      # Ghostty installs via Flatpak — ensure Flatpak gets installed too
-      if ! command -v flatpak &>/dev/null && [[ "$INSTALL_FLATPAK" != true ]]; then
-        echo "   ↳ Flatpak is required for Ghostty — will install Flatpak as well"
-        INSTALL_FLATPAK=true
-      fi
     fi
   else
     echo "✅ Ghostty already installed"
@@ -906,18 +883,17 @@ if [[ "$INSTALL_PYENV" == true ]]; then
   PYENV_CONFIG='
 # pyenv configuration
 export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"'
 
   if [ -f "$HOME/.bashrc" ]; then
-    if ! grep -q 'eval "$(pyenv init -)"' ~/.bashrc 2>/dev/null; then
+    if ! grep -q 'pyenv init' ~/.bashrc 2>/dev/null; then
       echo "$PYENV_CONFIG" >>~/.bashrc
     fi
   fi
 
   if [ -f "$HOME/.zshrc" ]; then
-    if ! grep -q 'eval "$(pyenv init -)"' ~/.zshrc 2>/dev/null; then
+    if ! grep -q 'pyenv init' ~/.zshrc 2>/dev/null; then
       echo "$PYENV_CONFIG" >>~/.zshrc
     fi
   fi
@@ -925,7 +901,6 @@ eval "$(pyenv init -)"'
   # Load pyenv for this session
   export PYENV_ROOT="$HOME/.pyenv"
   export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
 
   echo "✅ pyenv installed"
@@ -936,7 +911,6 @@ if [[ "$INSTALL_PYTHON" == true ]]; then
   # Ensure pyenv is loaded
   export PYENV_ROOT="$HOME/.pyenv"
   export PATH="$PYENV_ROOT/bin:$PATH"
-  eval "$(pyenv init --path)"
   eval "$(pyenv init -)"
 
   echo "🐍 Installing Python $PYTHON_VERSION via pyenv..."
@@ -1013,15 +987,6 @@ if [[ "$INSTALL_BITWARDEN" == true ]]; then
   echo "✅ Bitwarden CLI installed"
 fi
 
-# Install Flatpak
-if [[ "$INSTALL_FLATPAK" == true ]]; then
-  echo "📦 Installing Flatpak..."
-  sudo apt install -y flatpak
-  # Add Flathub repository
-  flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-  echo "✅ Flatpak installed"
-fi
-
 # Install GUI applications
 # Brave Browser
 if [[ "$INSTALL_BRAVE" == true ]]; then
@@ -1069,14 +1034,19 @@ if [[ "$INSTALL_TRANSMISSION" == true ]]; then
   echo "✅ Transmission installed"
 fi
 
-# Obsidian (via Flatpak)
+# Obsidian (official .deb from GitHub releases)
 if [[ "$INSTALL_OBSIDIAN" == true ]]; then
-  if command -v flatpak &>/dev/null; then
-    echo "📝 Installing Obsidian via Flatpak..."
-    flatpak install -y flathub md.obsidian.Obsidian
-    echo "✅ Obsidian installed"
+  echo "📝 Installing Obsidian..."
+  obsidian_deb_url=$(curl -fsSL https://api.github.com/repos/obsidianmd/obsidian-releases/releases/latest |
+    grep -oE 'https://[^"]*amd64\.deb' | head -n1)
+  if [[ -z "$obsidian_deb_url" ]]; then
+    echo "⚠️  Could not find Obsidian .deb URL — skipping"
   else
-    echo "⚠️  Flatpak not available. Install Flatpak first or download Obsidian AppImage manually."
+    tmp_deb=$(mktemp --suffix=.deb)
+    curl -fsSL -o "$tmp_deb" "$obsidian_deb_url"
+    sudo apt install -y "$tmp_deb"
+    rm -f "$tmp_deb"
+    echo "✅ Obsidian installed"
   fi
 fi
 
@@ -1139,14 +1109,19 @@ if [[ "$INSTALL_PICOM" == true ]]; then
   echo "✅ Picom installed"
 fi
 
-# WhatsApp (via Flatpak)
+# WasIstLos (community WhatsApp client, .deb from GitHub releases)
 if [[ "$INSTALL_WHATSAPP" == true ]]; then
-  if command -v flatpak &>/dev/null; then
-    echo "💬 Installing WhatsApp via Flatpak..."
-    flatpak install -y flathub io.github.mimbrero.WhatsAppDesktop
-    echo "✅ WhatsApp installed"
+  echo "💬 Installing WasIstLos (WhatsApp)..."
+  wasistlos_deb_url=$(curl -fsSL https://api.github.com/repos/xeco23/WasIstLos/releases/latest |
+    grep -oE 'https://[^"]*_amd64\.deb' | head -n1)
+  if [[ -z "$wasistlos_deb_url" ]]; then
+    echo "⚠️  Could not find WasIstLos .deb URL — skipping"
   else
-    echo "⚠️  Flatpak not available. Install Flatpak first."
+    tmp_deb=$(mktemp --suffix=.deb)
+    curl -fsSL -o "$tmp_deb" "$wasistlos_deb_url"
+    sudo apt install -y "$tmp_deb"
+    rm -f "$tmp_deb"
+    echo "✅ WasIstLos installed"
   fi
 fi
 
@@ -1206,15 +1181,16 @@ if [[ "$INSTALL_WINE" == true ]]; then
   echo "✅ Wine installed"
 fi
 
-# Ghostty (via Flatpak)
+# Ghostty (community Debian apt repo, debian.griffo.io)
 if [[ "$INSTALL_GHOSTTY" == true ]]; then
-  if command -v flatpak &>/dev/null; then
-    echo "👻 Installing Ghostty via Flatpak..."
-    flatpak install -y flathub com.mitchellh.ghostty
-    echo "✅ Ghostty installed"
-  else
-    echo "⚠️  Flatpak not available. Install Flatpak first or build Ghostty from source."
-  fi
+  echo "👻 Installing Ghostty..."
+  curl -fsSL https://debian.griffo.io/EA0F721D231FDD3A0A17B9AC7808B4DD62C41256.asc |
+    sudo gpg --dearmor --yes -o /etc/apt/trusted.gpg.d/debian.griffo.io.gpg
+  echo "deb https://debian.griffo.io/apt $(lsb_release -sc) main" |
+    sudo tee /etc/apt/sources.list.d/debian.griffo.io.list >/dev/null
+  sudo apt update
+  sudo apt install -y ghostty
+  echo "✅ Ghostty installed"
 fi
 
 # llama.cpp (build from source)
@@ -1545,7 +1521,6 @@ fi
 # Check pyenv/Python
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)" 2>/dev/null
 eval "$(pyenv init -)" 2>/dev/null
 command -v pyenv >/dev/null && echo "✅ pyenv: $(pyenv --version)"
 command -v python >/dev/null && echo "✅ Python: $(python --version)"
@@ -1559,12 +1534,11 @@ command -v node >/dev/null && echo "✅ Node.js: $(node --version)"
 command -v npm >/dev/null && echo "✅ npm: $(npm --version)"
 command -v claude >/dev/null && echo "✅ Claude Code CLI: $(claude --version 2>/dev/null | head -n1)"
 
-command -v flatpak >/dev/null && echo "✅ Flatpak: $(flatpak --version)"
 command -v brave-browser >/dev/null && echo "✅ Brave Browser: Installed"
 command -v google-chrome >/dev/null && echo "✅ Google Chrome: Installed"
 command -v code >/dev/null && echo "✅ VS Code: Installed"
 command -v transmission-gtk >/dev/null && echo "✅ Transmission: Installed"
-flatpak list 2>/dev/null | grep -q obsidian && echo "✅ Obsidian: Installed"
+command -v obsidian >/dev/null && echo "✅ Obsidian: Installed"
 command -v spotify >/dev/null && echo "✅ Spotify: Installed"
 command -v adb >/dev/null && echo "✅ Android Platform Tools (ADB): $(adb --version | head -n1)"
 command -v scrcpy >/dev/null && echo "✅ scrcpy: $(scrcpy --version 2>&1 | head -n1)"
@@ -1573,13 +1547,13 @@ command -v i3 >/dev/null && echo "✅ i3: $(i3 --version | head -n1)"
 command -v polybar >/dev/null && echo "✅ Polybar: $(polybar --version | head -n1)"
 command -v rofi >/dev/null && echo "✅ Rofi: $(rofi -version | head -n1)"
 command -v picom >/dev/null && echo "✅ Picom: $(picom --version 2>&1 | head -n1)"
-flatpak list 2>/dev/null | grep -q whatsapp && echo "✅ WhatsApp: Installed"
+command -v wasistlos >/dev/null && echo "✅ WasIstLos (WhatsApp): Installed"
 command -v rclone >/dev/null && echo "✅ rclone: $(rclone --version | head -n1)"
 dpkg -l 2>/dev/null | grep -q plexmediaserver && echo "✅ Plex Media Server: Installed"
 command -v copyq >/dev/null && echo "✅ CopyQ: Installed"
 command -v remmina >/dev/null && echo "✅ Remmina: Installed"
 command -v nvim >/dev/null && echo "✅ Neovim: $(nvim --version | head -n1)"
-command -v ghostty >/dev/null || flatpak list 2>/dev/null | grep -q ghostty && echo "✅ Ghostty: Installed"
+command -v ghostty >/dev/null && echo "✅ Ghostty: Installed"
 command -v starship >/dev/null && echo "✅ starship: $(starship --version | head -n1)"
 command -v fzf >/dev/null && echo "✅ fzf: $(fzf --version | head -n1)"
 command -v zoxide >/dev/null && echo "✅ zoxide: $(zoxide --version | head -n1)"
